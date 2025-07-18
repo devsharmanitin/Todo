@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+
+
+@font-face {
+  font-family: 'Outfit'; 
+  src: url('assets/fonts/outfit.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('assets/fonts/Inter.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('assets/fonts/Poppins.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Oswald';
+  src: url('assets/fonts/Oswald.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+@font-face {
+  font-family: 'Avant Garde Book BT';
+  font-weight: 700;
+  src: url('assets/fonts/AVGARDN_2.woff') format('woff');
+}
+
+
+@font-face {
+  font-family: 'Avant Garde Demi BT';
+  font-style: normal;
+  src: url('assets/fonts/AVGARDD_2.woff') format('woff');
+}
+
+
+@font-face {
+font-family: 'Avant Garde Demi Oblique BT';
+font-style: normal;
+src: url('assets/fonts/AVGARDDO_2.woff') format('woff');
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --font-outfit: "Outfit", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-oswald: "Oswald", sans-serif;
+  --font-avantGrade-book: "Avant Garde Book BT", sans-serif;
+  --font-avantGrade-demi: "Avant Garde Demi BT", sans-serif;
+  --font-avantGrade-bt: "Avant Garde Demi Oblique BT", sans-serif;
+}
+
+.font-outfit {
+  font-family: var(--font-outfit);
+}
+
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.font-poppins {
+  font-family: var(--font-poppins);
+}
+
+.font-oswald {
+  font-family: var(--font-oswald);
+}
+
+.font-book {
+  font-family: var(--font-avantGrade-book);
+}
+
+.font-demi {
+  font-family: var(--font-avantGrade-demi);
+}
+
+.font-bt {
+  font-family: var(--font-avantGrade-bt);
+}
+
+*{
+  box-sizing: border-box;
+}
