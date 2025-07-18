@@ -1,6 +1,7 @@
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { useEffect, useState } from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -10,6 +11,9 @@ type ProgressChartProps = {
     colorCode: string;
 };
 export function ProgressChart({ label, percentage, colorCode }: ProgressChartProps) {
+    const [size, setSize] = useState(ChartSize());
+    const [fontSize, setFontSize] = useState(FontSize());
+
     const data = {
         labels: [label],
         datasets: [
@@ -23,6 +27,7 @@ export function ProgressChart({ label, percentage, colorCode }: ProgressChartPro
     };
 
     const options = {
+        responsive: false,
         cutout: '70%',
         plugins: {
             legend: {
@@ -34,7 +39,7 @@ export function ProgressChart({ label, percentage, colorCode }: ProgressChartPro
                     boxWidth: 50,         // width of the color box
                     color: '#000',        // color of the label **text**, not the box
                     font: {
-                        size: 12,
+                        size: fontSize,
                     },
                 },
             },
@@ -63,5 +68,27 @@ export function ProgressChart({ label, percentage, colorCode }: ProgressChartPro
         },
     };
 
-    return <Doughnut data={data} options={options} plugins={[centerTextPlugin]} width={150} height={150} />;
+    function ChartSize() {
+        return window.innerWidth <= 768 ? 80 : 140;
+    }
+
+    function FontSize() {
+        return window.innerWidth <= 768 ? 10 : 14;
+    }
+
+    useEffect(() => {
+        const handleResize = () => {
+            setSize(ChartSize());
+            setFontSize(FontSize());
+        }
+
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+
+        }
+    }, [])
+
+
+    return <Doughnut data={data} options={options} plugins={[centerTextPlugin]} width={size} height={size} />;
 }

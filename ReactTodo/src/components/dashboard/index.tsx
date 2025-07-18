@@ -2,18 +2,25 @@
 import Lucy from '../../assets/images/lucy.svg';
 import Party from '../../assets/images/party.svg';
 import { ProgressChart } from '../progress/chart';
+import Modal from '../ui/modal';
+import { useState } from 'react';
+import TaskCard from '../ui/card';
+import GridContainer from '../ui/gridcontainer';
 
 function Home() {
+
+    const [isOpenModal, setIsOpenModal] = useState(false);
+
 
     return (
         <>
 
 
             {/* main Container */}
-            <div className="flex-1 p-4 md:p-10">
+            <div className="flex-1">
 
                 {/* Top Bar */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center font-poppins p-2 space-y-4 md:space-y-0">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center font-poppins px-2 space-y-4 md:space-y-0">
                     <h1 className='text-2xl md:text-4xl text-gray-900 font-bold'>Welcome Back Nitin Sharma👋</h1>
                     <div className="flex items-center space-x-4 md:space-x-10">
                         <div className="flex space-x-1">
@@ -23,17 +30,94 @@ function Home() {
                                 </a>
                             ))}
                         </div>
-                        <button className='bg-red-100 text-red-500 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>
+                        <button onClick={() => setIsOpenModal(true)} className='bg-red-100 text-red-500 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user-plus-icon lucide-user-plus w-5 h-5 md:w-6 md:h-6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg>
                             <span className='text-xs md:text-sm'>Invite</span>
                         </button>
+                        {isOpenModal && (
+                            <Modal isOpen={isOpenModal} onClose={() => setIsOpenModal(false)} title="Send an Invite to a New Member">
+                                <div className="space-y-4">
+                                    <h3 className="text-xl">Email</h3>
+                                    <div className="flex items-center md:space-x-4 justify-start flex md:flex-row flex-col  items-center space-x-4">
+                                        <input type="text" placeholder="Enter email address" className="w-full p-2 border border-gray-300 rounded-lg" />
+                                        <button className="bg-red-500 text-white px-4 py-2 w-max rounded text-nowrap" >Send Invite</button>
+                                    </div>
+                                    <h3 className="text-xl">Members</h3>
+                                    <ul className="space-y-4">
+                                        <li>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-5">
+                                                    <img className="w-full w-10 h-10 border border-red-500 rounded-full" src="/src/assets/images/lucy.svg" />
+                                                    <div className="flex flex-col">
+                                                        <h3>Upasna Gurung</h3>
+                                                        <p>upasna@gmai.com</p>
+                                                    </div>
+                                                </div>
+                                                <select id="permissions" className="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-600 block w-max p-2.5 dark:bg-red-500 dark:border-red-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-red-500 dark:focus:border-red-500">
+                                                    <option value="can-edit" selected>can edit</option>
+                                                    <option value="can-delete">can delete</option>
+                                                </select>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-5">
+                                                    <img className="w-full w-10 h-10 border border-red-500 rounded-full" src="/src/assets/images/lucy.svg" />
+                                                    <div className="flex flex-col">
+                                                        <h3>Yash Ghai</h3>
+                                                        <p>yash@gmai.com</p>
+                                                    </div>
+                                                </div>
+                                                <select id="permissions" className="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-600 block w-max p-2.5 dark:bg-red-500 dark:border-red-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-red-500 dark:focus:border-red-500">
+                                                    <option value="can-edit" selected>can edit</option>
+                                                    <option value="can-delete">can delete</option>
+                                                </select>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-5">
+                                                    <img className="w-full w-10 h-10 border border-red-500 rounded-full" src="/src/assets/images/lucy.svg" />
+                                                    <div className="flex flex-col">
+                                                        <h3>Shubham Goyal</h3>
+                                                        <p>shubham@gmail.com</p>
+                                                    </div>
+                                                </div>
+                                                <select id="permissions" className="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-600 block w-max p-2.5 dark:bg-red-500 dark:border-red-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-red-500 dark:focus:border-red-500">
+                                                    <option value="can-edit" selected>can edit</option>
+                                                    <option value="can-delete">can delete</option>
+                                                </select>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-5">
+                                                    <img className="w-full w-10 h-10 border border-red-500 rounded-full" src="/src/assets/images/lucy.svg" />
+                                                    <div className="flex flex-col">
+                                                        <h3>Upasna Gurung</h3>
+                                                        <p>upasna@gmai.com</p>
+                                                    </div>
+                                                </div>
+                                                <select id="permissions" className="border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-600 block w-max p-2.5 dark:bg-red-500 dark:border-red-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-red-500 dark:focus:border-red-500">
+                                                    <option value="can-edit" selected>can edit</option>
+                                                    <option value="can-delete">can delete</option>
+                                                </select>
+                                            </div>
+                                        </li>
+                                    </ul>
+
+
+                                </div>
+                            </Modal>
+                        )
+                        }
                     </div>
                 </div>
 
 
                 {/* Data Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-gray-300 p-2 md:p-6 mt-6 md:mt-10 shadow-lg rounded-lg">
-                    <div className="bg-white p-6 rounded-lg shadow-lg">
+                <GridContainer className="md:mt-10 border border-gray-300 md:p-6 shadow-lg">
+                    <div className="bg-white md:p-4 rounded-lg shadow-lg">
                         <div className="flex justify-between items-center mb-4 font-demi">
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
@@ -51,69 +135,39 @@ function Home() {
                             <span className='text-gray-500'>.Today</span>
                         </div>
                         <div className="space-y-4">
-                            <div className="border border-gray-200 rounded-lg py-5 px-4 relative font-poppins">
-                                <div className="flex items-center justify-between">
-                                    {/* Circle */}
-                                    <div className="w-5 h-5 border-2 border-red-500 rounded-full mt-1 flex-shrink-0 absolute left-5 top-4"></div>
-                                    <div className="w-5 h-5 text-gray-500 absolute right-5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ellipsis-icon lucide-ellipsis"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg></div>
-                                </div>
-                                <div className="flex items-center space-x-4 px-8">
-                                    <div className="flex-1">
-                                        <h2 className='text-gray-700 mb-3 font-bold'>Attend Michal's Birthday Party</h2>
-                                        <p className='text-gray-500 text-sm'>Buy gift on the way and pick up cake form the backery. (6 PM | Fresh Elements)...</p>
-                                    </div>
-                                    <div className="w-22 h-22 rounded-lg mt-2">
-                                        <img src={Party} className="w-full" />
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center mt-3 px-8">
-                                    <p className='text-xs text-gray-500'>Priority: <span className='text-blue-400'>Moderate</span></p>
-                                    <p className='text-xs text-gray-500'>Status: <span className='text-red-400'>Not Started</span></p>
-                                    <p className='text-xs text-gray-500'>Created On: <span className='text-gray-400'>20/06/2025</span></p>
-                                </div>
-                            </div>
-                            <div className="border border-gray-200 rounded-lg py-5 px-4 relative font-poppins">
-                                <div className="flex items-center justify-between">
-                                    {/* Circle */}
-                                    <div className="w-5 h-5 border-2 border-blue-500 rounded-full mt-1 flex-shrink-0 absolute left-5 top-4"></div>
-                                    <div className="w-5 h-5 text-gray-500 absolute right-5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ellipsis-icon lucide-ellipsis"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg></div>
-                                </div>
-                                <div className="flex items-center space-x-4 px-8">
-                                    <div className="flex-1">
-                                        <h2 className='text-gray-700 mb-3 font-bold'>Attend Michal's Birthday Party</h2>
-                                        <p className='text-gray-500 text-sm'>Buy gift on the way and pick up cake form the backery. (6 PM | Fresh Elements)...</p>
-                                    </div>
-                                    <div className="w-22 h-22 rounded-lg mt-2">
-                                        <img src={Party} className="w-full" />
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center mt-3 px-8">
-                                    <p className='text-xs text-gray-500'>Priority: <span className='text-blue-400'>Moderate</span></p>
-                                    <p className='text-xs text-gray-500'>Status: <span className='text-red-400'>Not Started</span></p>
-                                    <p className='text-xs text-gray-500'>Created On: <span className='text-gray-400'>20/06/2025</span></p>
-                                </div>
-                            </div>
-                            <div className="border border-gray-200 rounded-lg py-5 px-4 relative font-poppins">
-                                <div className="flex items-center justify-between">
-                                    {/* Circle */}
-                                    <div className="w-5 h-5 border-2 border-blue-500 rounded-full mt-1 flex-shrink-0 absolute left-5 top-4"></div>
-                                    <div className="w-5 h-5 text-gray-500 absolute right-5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ellipsis-icon lucide-ellipsis"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg></div>
-                                </div>
-                                <div className="flex items-center space-x-4 px-8">
-                                    <div className="flex-1">
-                                        <h2 className='text-gray-700 mb-3 font-bold'>Attend Michal's Birthday Party</h2>
-                                        <p className='text-gray-500 text-sm'>Buy gift on the way and pick up cake form the backery. (6 PM | Fresh Elements)...</p>
-                                    </div>
-                                    <div className="w-22 h-22 rounded-lg mt-2">
-                                        <img src={Party} className="w-full" />
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center mt-3 px-8">
-                                    <p className='text-xs text-gray-500'>Priority: <span className='text-blue-400'>Moderate</span></p>
-                                    <p className='text-xs text-gray-500'>Status: <span className='text-red-400'>Not Started</span></p>
-                                    <p className='text-xs text-gray-500'>Created On: <span className='text-gray-400'>20/06/2025</span></p>
-                                </div>
-                            </div>
+                            <TaskCard
+                                title="Attend Michal's Birthday Party"
+                                description="Buy gift on the way and pick up cake form the backery. (6 PM | Fresh Elements)..."
+                                status="Not Started"
+                                statusColor="red"
+                                priority="Moderate"
+                                priorityColor="blue"
+                                date="20/06/2025"
+                                image={Party}
+                                circleColor="red">
+                            </TaskCard>
+                            <TaskCard
+                                title="Attend Michal's Birthday Party"
+                                description="Buy gift on the way and pick up cake form the backery. (6 PM | Fresh Elements)..."
+                                status="Not Started"
+                                statusColor="red"
+                                priority="Moderate"
+                                priorityColor="blue"
+                                date="20/06/2025"
+                                image={Party}
+                                circleColor="red">
+                            </TaskCard>
+                            <TaskCard
+                                title="Attend Michal's Birthday Party"
+                                description="Buy gift on the way and pick up cake form the backery. (6 PM | Fresh Elements)..."
+                                status="Not Started"
+                                statusColor="red"
+                                priority="Moderate"
+                                priorityColor="blue"
+                                date="20/06/2025"
+                                image={Party}
+                                circleColor="red">
+                            </TaskCard>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 gap-6">
@@ -193,7 +247,7 @@ function Home() {
                             {/* End */}
                         </div>
                     </div>
-                </div>
+                </GridContainer>
 
             </div>
         </>

@@ -10,6 +10,7 @@ interface TaskCardProps {
   date?: string;
   image?: string;
   circleColor?: string;
+  className?: string;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -22,13 +23,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
   date,
   image,
   circleColor = 'gray',
+  className = '',
 }) => {
   return (
-    <div className="border border-gray-200 rounded-lg py-5 px-4 relative font-poppins">
+    <div className={`border border-gray-200 rounded-lg py-4 px-3 relative font-poppins ${className}`}>
       <div className="flex items-center justify-between">
         {/* Circle */}
         <div
-          className={`w-5 h-5 border-2 rounded-full mt-1 flex-shrink-0 absolute left-5 top-4`}
+          className={`w-5 h-5 border-2 rounded-full mt-1 flex-shrink-0 absolute left-3 top-3`}
           style={{ borderColor: circleColor }}
         ></div>
 
@@ -53,7 +55,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center space-x-4 px-8">
+      <div className="flex items-center space-x-4 px-6">
         <div className="flex-1">
           <h2 className="text-gray-700 mb-3 font-bold">{title}</h2>
           <p className="text-gray-500 text-sm">{description}</p>
@@ -65,7 +67,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
       </div>
 
-      <div className="flex flex-wrap justify-between items-center mt-3 px-8 space-y-2 md:space-y-0 md:flex-nowrap">
+      <div className="flex flex-wrap justify-between items-center mt-3 px-4 space-y-2 md:space-y-0 md:flex-nowrap">
         {priority && (
           <p className="text-xs text-gray-500">
             Priority: <span style={{ color: priorityColor }}>{priority}</span>
