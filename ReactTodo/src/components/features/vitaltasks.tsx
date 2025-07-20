@@ -3,12 +3,12 @@ import TaskCard from "../ui/card";
 import Party from "../../assets/images/party.svg";
 
 
-function MyTasks() {
+function VitalTasks() {
     return (
         <GridContainer className="md:mt-0 ">
             <div className="bg-white md:p-4 rounded-3xl shadow-lg border border-gray-300 p-4">
                 <div className="flex justify-between items-center mb-4 font-demi">
-                    <h2 className="relative text-2xl font-semibold text-gray-800 before:absolute before:bottom-0 before:w-20 before:h-[3px] before:bg-red-500 before:content-['']">My Tasks</h2>
+                    <h2 className="relative text-2xl font-semibold text-gray-800 before:absolute before:bottom-0 before:w-20 before:h-[3px] before:bg-red-500 before:content-['']">Vital Tasks</h2>
                 </div>
                 <div className="space-y-4">
                     <TaskCard
@@ -93,4 +93,4 @@ function MyTasks() {
 }
 
 
-export default MyTasks;
+export default VitalTasks;

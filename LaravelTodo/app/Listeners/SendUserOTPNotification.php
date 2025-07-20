@@ -34,7 +34,7 @@ class SendUserOTPNotification
          * App\Notifications\SendOTPNotification
          * 
          */
-        // $user->notify(new SendOTPNotification($otp));
+        $user->notify(new SendOTPNotification($otp));
 
 
         /**
@@ -43,12 +43,12 @@ class SendUserOTPNotification
          * Uses Slack Api 
          */
         
-        $user->notify(new SlackNotification($user));
+        // $user->notify(new SlackNotification($user));
 
         /**
          * Uses Slack Webhook
          */
-        $notification = new SlackNotification($user);
-        $notification->handle();
+        // $notification = new SlackNotification($user);
+        // $notification->handle();
     }
 }

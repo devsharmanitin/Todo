@@ -1,6 +1,6 @@
-import React from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import Profile from '../../assets/images/profile.svg';
+import React, { useState, useEffect } from 'react'; // Already imported, but good to be explicit
+import { useLocation, Link } from 'react-router-dom';
 import {
     LayoutDashboard,
     AlertCircle,
@@ -9,113 +9,165 @@ import {
     Settings,
     LogOut,
 } from 'lucide-react';
+import Profile from '../../assets/images/profile.svg'; // Adjust path as needed
+import toast, { Toaster } from 'react-hot-toast'; // Toaster is still useful if Sidebar has its own toasts later
+import { getRequest } from '../../helpers/functions';
 
-// 1. Define the props interface to accept the setSidebarOpen function
-interface SidebarProps {
-    setSidebarOpen: Dispatch<SetStateAction<boolean>>;
+// Define a type for the user object that Sidebar expects
+interface IUser {
+    id: number;
+    name: string;
+    email: string;
+    image: string | null;
+    // Add other user properties that Sidebar needs
 }
 
-// 2. Convert to a standard React FC component and accept props
-const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => {
+// Update SidebarProps to accept the user object
+interface SidebarProps {
+    setSidebarOpen: Dispatch<SetStateAction<boolean>>;
+    user: IUser | null; // User data will now be passed as a prop
+}
 
-    const navitems = [
+interface NavItem {
+    name: string;
+    route: string;
+    icon: React.ElementType;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure 'user' prop
+    const location = useLocation();
+    const [user, SetUser] = useState<IUser | null>(null);
+    const [loading, setLoading] = useState(true); // Loading state for fetching user data
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                // Use your actual getRequest here, or mockGetRequest for testing
+                const response: any = await getRequest("/user"); // Or mockGetRequest("/dashboard");
+                if (response.success) {
+                    SetUser(response.user); // Set the 'data' part of the response
+                    
+                } else {
+                    toast.error(response.message || "Something went wrong. Please try again.");
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard data:", error);
+                toast.error("Network error. Please try again later.");
+            } finally {
+                setLoading(false); // Set loading to false after fetch completes (success or error)
+            }
+        };
+
+        fetchUserData();
+        
+    }, []);
+
+    console.log("userr", user); // Log the fetched user data
+
+    // Remove the useState for userData and loading, and the useEffect that fetches user data.
+    // This data is now coming from the 'user' prop.
+
+    const navitems: NavItem[] = [
         { name: 'Dashboard', route: '/', icon: LayoutDashboard },
         { name: 'Vital Task', route: '/vital-tasks', icon: AlertCircle },
         { name: 'My Tasks', route: '/my-tasks', icon: ClipboardCheck },
         { name: 'Task Categories', route: '/task-categories', icon: ClipboardList },
-        { name: 'Settings', route: '/settings', icon: Settings },
+        { name: 'Settings', route: '/profile', icon: Settings }, // Changed to /profile for consistency
         { name: 'Logout', route: '/logout', icon: LogOut },
-    ]
+    ];
 
+    // console.log("User Data in Sidebar (from prop):", user); // Log the received user prop
 
     return (
-        // The outer div now handles the full height and background
-        <div className="w-64 h-full bg-[#FFFFFF] text-white relative">
-
-            {/* 3. Add a mobile-only close button */}
+        <div className="w-64 h-full bg-white text-white relative">
+            <Toaster position="top-center" reverseOrder={false} /> {/* Keep Toaster for potential future toasts */}
+            
+            {/* Mobile-only close button */}
             <button
                 className="md:hidden absolute top-4 right-4 text-white p-1 rounded-full z-20"
                 onClick={() => setSidebarOpen(false)}
                 aria-label="Close sidebar"
             >
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                    width="24"
+                    height="24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
             </button>
 
-            <div className="bg-[#FFFFFF] h-full">
-                {/* The red background part */}
+            <div className="bg-white h-full">
+                {/* Red sidebar background */}
                 <div className="relative mt-10 bg-red-500 rounded-t-lg h-full">
                     <div className="px-6 pb-6">
 
-                        {/* Profile Section */}
-                        <div className="flex justify-center space-x-3 mb-6">
-                            <div className="w-24 h-24 rounded-full bg-white overflow-hidden absolute -top-10">
-                                <img
-                                    className="w-full h-full object-cover"
-                                    src={Profile}
-                                    alt="Profile"
-                                />
+                        {/* Profile Section - Conditionally render based on 'user' prop */}
+                        {user ? ( // Only render if 'user' prop is not null
+                            <div className="flex justify-center space-x-3 mb-6">
+                                <div className="w-24 h-24 rounded-full bg-white overflow-hidden absolute -top-10">
+                                    <img
+                                        className="w-full h-full object-cover"
+                                        src={user.image || Profile} // Use user.image if available, fallback to default Profile SVG
+                                        alt="Profile"
+                                    />
+                                </div>
+                                <div className="text-normal text-center mt-20 font-outfit">
+                                    <h2 className="font-semibold text-white">{user.name}</h2>
+                                    <p className="text-red-100 text-sm">{user.email}</p>
+                                </div>
                             </div>
-                            <div className="text-normal text-center mt-20 font-outfit">
-                                <h2 className="font-semibold text-white">Sundar Gurung</h2>
-                                <p className="text-red-100 text-sm">sundargurung580@gmail.com</p>
+                        ) : (
+                            // Optional: Placeholder or loading state if user prop is null (though MainLayout handles this)
+                            <div className="flex justify-center flex-col items-center space-x-3 mb-6 pt-10">
+                                <div className="w-24 h-24 rounded-full bg-white overflow-hidden absolute -top-10 animate-pulse">
+                                    <img
+                                        className="w-full h-full object-cover"
+                                        src={Profile}
+                                        alt="Loading Profile"
+                                    />
+                                </div>
+                                <div className="text-normal text-center mt-20 font-outfit">
+                                    <h2 className="font-semibold text-white animate-pulse bg-red-300 h-6 w-32 rounded-md mb-2"></h2>
+                                    <p className="text-red-100 text-sm animate-pulse bg-red-200 h-4 w-40 rounded-md"></p>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Navigation Section */}
+                        {/* Navigation */}
                         <nav className="space-y-1 flex flex-col justify-start min-w-[200px] mt-10 font-poppins">
-                            <div className="bg-white text-red-500 rounded-lg p-3">
-                                <div className="flex items-center space-x-5">
-                                    <div className="w-6 h-6">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-layout-dashboard">
-                                            <rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" />
-                                        </svg>
-                                    </div>
-                                    <span className="font-medium text-sm">Dashboard</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center space-x-5 text-red-100 rounded-lg p-3 hover:bg-white hover:bg-opacity-75 hover:text-red-500 cursor-pointer">
-                                <div className="w-6 h-6">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-circle-alert">
-                                        <circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" />
-                                    </svg>
-                                </div>
-                                <span className="font-medium text-sm">Vital Task</span>
-                            </div>
-                            <div className="flex items-center space-x-5 text-red-100 rounded-lg p-3 hover:bg-white hover:bg-opacity-75 hover:text-red-500 cursor-pointer">
-                                <div className="w-6 h-6">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard-check-icon lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="m9 14 2 2 4-4" /></svg>
-                                </div>
-                                <span className="font-medium text-sm">My Tasks</span>
-                            </div>
-                            <div className="flex items-center space-x-5 text-red-100 rounded-lg p-3 hover:bg-white hover:bg-opacity-75 hover:text-red-500 cursor-pointer">
-                                <div className="w-6 h-6">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard-list-icon lucide-clipboard-list"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" /></svg>
-                                </div>
-                                <span className="font-medium text-sm">Task Categories</span>
-                            </div>
-                            <div className="flex items-center space-x-5 text-red-100 rounded-lg p-3 hover:bg-white hover:bg-opacity-75 hover:text-red-500 cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings-icon lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
-                                <span className="font-medium text-sm">Settings</span>
-                            </div>
-                            <div className="flex items-center space-x-5 text-red-100 rounded-lg p-3 hover:bg-white hover:bg-opacity-75 hover:text-red-500 cursor-pointer">
-                                <div className="w-6 h-6">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-log-out">
-                                        <path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                                    </svg>
-                                </div>
-                                <span className="font-medium text-sm">Logout</span>
-                            </div>
-                        </nav>
+                            {navitems.map((item) => {
+                                const isActive = location.pathname === item.route;
+                                const Icon = item.icon;
 
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        to={item.route}
+                                        className={`${
+                                            isActive
+                                                ? 'bg-white text-red-500'
+                                                : 'text-red-100 hover:bg-white hover:bg-opacity-75 hover:text-red-500'
+                                        } rounded-lg p-3 flex items-center space-x-5 transition-colors duration-200`}
+                                    >
+                                        <div className="w-6 h-6">
+                                            <Icon className="w-6 h-6" />
+                                        </div>
+                                        <span className="font-medium text-sm">{item.name}</span>
+                                    </Link>
+                                );
+                            })}
+                        </nav>
                     </div>
                 </div>
             </div>
         </div>
     );
-}
+};
 
-// 4. Ensure the export is default and component name is capitalized
 export default Sidebar;

@@ -255,7 +255,7 @@ class TaskController extends Controller
         return response()->json([
             'success'          => true,
             'message'          => 'Data fetched successfully',
-            'auth_user'        => $user,
+            'user'        => $user,
             'now'              => $currentDate,
             'users'            => $users,
             'today_tasks'      => $todayTasks,

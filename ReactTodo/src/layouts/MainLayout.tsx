@@ -24,7 +24,7 @@ const MainLayout = () => {
 
                 {/* Sidebar */}
                 <div
-                    className={`fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-40 transform transition-transform 
+                    className={`fixed left-0 top-0 min-h-screen w-64 bg-white shadow-lg z-40 transform transition-transform 
                                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
                                 md:relative md:translate-x-0 md:shadow-none`}
                 >

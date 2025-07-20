@@ -61,7 +61,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <p className="text-gray-500 text-sm">{description}</p>
         </div>
         {image && (
-          <div className="w-22 h-22 rounded-lg mt-2">
+          <div className="w-15 h-15 md:w-20 md:w-20 rounded-lg mt-2">
             <img src={image} alt="task" className="w-full rounded-lg object-cover" />
           </div>
         )}

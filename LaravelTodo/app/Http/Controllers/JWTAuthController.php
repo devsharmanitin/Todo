@@ -12,6 +12,8 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Events\UserRegistered;
 use App\Services\Otp\OtpService;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Services\PasswordService;
 
 class JWTAuthController extends Controller
 {
@@ -175,6 +177,31 @@ class JWTAuthController extends Controller
             'success'  => true,
             'message' => 'Successfully logged out'
         ]);
+    }
+
+    public function changePassword(ChangePasswordRequest $request)
+    {
+        $service = new PasswordService();
+
+        try {
+            $result = $service->changePassword(
+                $request->user_id,
+                $request->current_password,
+                $request->new_password
+            );
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message']
+            ], $result['status']);
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not change password, please try again later.',
+                'error'   => $th->getMessage(), // remove in prod
+            ], 500);
+        }
     }
 
 }
