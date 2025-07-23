@@ -2,13 +2,16 @@ import toast, { Toaster } from 'react-hot-toast';
 import React, { useState } from 'react';
 import { postRequest } from "../../helpers/functions";
 import LoginSVG from '../../assets/images/login.svg'; // Assuming you have this SVG import
-
+import { useAuth } from '../../provider/AuthProvider';
+import { useNavigate } from "react-router-dom";
 
 
 const Login: React.FC = () => {
+    const { login } = useAuth();
     const [Email, setEmail] = useState("");
     const [Password, setPassword] = useState(""); // Renamed for consistency
     const [RememberMe, setRememberMe] = useState(false);
+    const navigate = useNavigate();
 
     // State to hold validation errors for each field
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -58,13 +61,19 @@ const Login: React.FC = () => {
         try {
             const response: any = await postRequest("/login", data); // Call your mock or actual API
             if (response.success) {
-                const token = response.token;
+                console.log("Login successful:", response);
+                login({
+                    username: response.user.username,
+                    email: response.user.email,
+                    token: response.access_token,
+                    permissions: response.user.permissions
+                });
+
+                const token = response.access_token;
                 localStorage.setItem("token", token); // Store the JWT token
                 toast.success(response.message || "Login successful!");
-                // Redirect to a protected route or dashboard
-                setTimeout(() => {
-                    window.location.href = "/"; // Example redirect
-                }, 1500);
+                navigate("/");
+
             } else {
                 // Display specific error message from the backend
                 toast.error(response.message || "Login failed. Please try again.");

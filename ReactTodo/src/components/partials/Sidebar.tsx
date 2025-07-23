@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Profile from '../../assets/images/profile.svg'; // Adjust path as needed
 import toast, { Toaster } from 'react-hot-toast'; // Toaster is still useful if Sidebar has its own toasts later
-import { getRequest } from '../../helpers/functions';
+import { getRequest, postRequest } from '../../helpers/functions';
 
 // Define a type for the user object that Sidebar expects
 interface IUser {
@@ -25,7 +25,7 @@ interface IUser {
 // Update SidebarProps to accept the user object
 interface SidebarProps {
     setSidebarOpen: Dispatch<SetStateAction<boolean>>;
-    user: IUser | null; // User data will now be passed as a prop
+    // user: IUser | null; // User data will now be passed as a prop
 }
 
 interface NavItem {
@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
                 const response: any = await getRequest("/user"); // Or mockGetRequest("/dashboard");
                 if (response.success) {
                     SetUser(response.user); // Set the 'data' part of the response
-                    
+
                 } else {
                     toast.error(response.message || "Something went wrong. Please try again.");
                 }
@@ -59,10 +59,26 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
         };
 
         fetchUserData();
-        
+
     }, []);
 
-    console.log("userr", user); // Log the fetched user data
+    const handleLogout = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        const response = await postRequest("/logout", {});
+        console.log("RES", response);
+        if (response.success) {
+            toast.success("Logged out successfully.");
+            window.location.href = "/login"; // 
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+        } else {
+            toast.error(response.message || "Logout failed. Please try again.");
+        }
+        window.location.href = "/login"; // 
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+
+    };
 
     // Remove the useState for userData and loading, and the useEffect that fetches user data.
     // This data is now coming from the 'user' prop.
@@ -73,7 +89,6 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
         { name: 'My Tasks', route: '/my-tasks', icon: ClipboardCheck },
         { name: 'Task Categories', route: '/task-categories', icon: ClipboardList },
         { name: 'Settings', route: '/profile', icon: Settings }, // Changed to /profile for consistency
-        { name: 'Logout', route: '/logout', icon: LogOut },
     ];
 
     // console.log("User Data in Sidebar (from prop):", user); // Log the received user prop
@@ -81,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
     return (
         <div className="w-64 h-full bg-white text-white relative">
             <Toaster position="top-center" reverseOrder={false} /> {/* Keep Toaster for potential future toasts */}
-            
+
             {/* Mobile-only close button */}
             <button
                 className="md:hidden absolute top-4 right-4 text-white p-1 rounded-full z-20"
@@ -149,11 +164,10 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
                                     <Link
                                         key={item.name}
                                         to={item.route}
-                                        className={`${
-                                            isActive
-                                                ? 'bg-white text-red-500'
-                                                : 'text-red-100 hover:bg-white hover:bg-opacity-75 hover:text-red-500'
-                                        } rounded-lg p-3 flex items-center space-x-5 transition-colors duration-200`}
+                                        className={`${isActive
+                                            ? 'bg-white text-red-500'
+                                            : 'text-red-100 hover:bg-white hover:bg-opacity-75 hover:text-red-500'
+                                            } rounded-lg p-3 flex items-center space-x-5 transition-colors duration-200`}
                                     >
                                         <div className="w-6 h-6">
                                             <Icon className="w-6 h-6" />
@@ -162,6 +176,17 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
                                     </Link>
                                 );
                             })}
+                            <Link
+                                onClick={(e) => handleLogout(e)}
+                                key="logout"
+                                to="/logout"
+                                className={`text-red-100 hover:bg-white hover:bg-opacity-75 hover:text-red-500 rounded-lg p-3 flex items-center space-x-5 transition-colors duration-200`}
+                            >
+                                <div className="w-6 h-6">
+                                    <LogOut className="w-6 h-6" />
+                                </div>
+                                <span className="font-medium text-sm">Logout</span>
+                            </Link>
                         </nav>
                     </div>
                 </div>

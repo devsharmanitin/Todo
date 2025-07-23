@@ -5,12 +5,12 @@ import React, { useState, useEffect } from 'react';
 import Lucy from '../../assets/images/lucy.svg'; // Ensure this path is correct
 import Party from '../../assets/images/party.svg'; // Ensure this path is correct
 import Upload from '../../assets/images/uploadimage.svg'; // Ensure this path is correct
-import { ProgressChart } from '../progress/chart'; // Ensure this path is correct
+import { ProgressChart } from '../progress/Chart'; // Ensure this path is correct
 import Modal from '../ui/modal'; // Ensure this path is correct
 import TaskCard from '../ui/card'; // Ensure this path is correct
 import GridContainer from '../ui/gridcontainer'; // Ensure this path is correct
 import { getRequest } from '../../helpers/functions'; // Adjust the import path as necessary
-import DragDropUploader from '../ui/DragDropUploader';
+import DragDropUploader from '../ui/dragdropuploader';
 
 // Define TypeScript interfaces for better type safety and readability
 interface IUser {
@@ -74,7 +74,7 @@ function Home() {
                 const response: any = await getRequest("/dashboard"); // Or mockGetRequest("/dashboard");
                 if (response.success) {
                     setDashboardData(response); // Set the 'data' part of the response
-                    
+
                 } else {
                     toast.error(response.message || "Something went wrong. Please try again.");
                 }
@@ -87,7 +87,7 @@ function Home() {
         };
 
         fetchDashboardData();
-        
+
     }, []); // Empty dependency array ensures this runs only once after initial render
 
 
@@ -115,7 +115,7 @@ function Home() {
             </div>
         );
     }
-    
+
 
     // Now that we know dashboardData is not null, we can safely access its properties
     return (
@@ -203,14 +203,14 @@ function Home() {
                                             <div className="space-y-4 flex-1">
                                                 <div className="flex flex-col space-y-2">
                                                     <label htmlFor="title" className="text-gray-700">Title</label>
-                                                    <input 
+                                                    <input
                                                         type="text" id="title" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
                                                 </div>
                                                 <div className="flex flex-col space-y-2">
                                                     <label htmlFor="date" className="text-gray-700">Date</label>
                                                     <input type="date" id="date" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
                                                 </div>
-                                               <legend className="text-gray-700 text-base mb-2">Priority</legend> {/* Corrected label for the group */}
+                                                <legend className="text-gray-700 text-base mb-2">Priority</legend> {/* Corrected label for the group */}
                                                 <div className="flex flex-row space-x-4">
                                                     {/* Extreme Priority Radio Button */}
                                                     <div className="flex items-center space-x-2">
@@ -220,7 +220,7 @@ function Home() {
                                                             name="task-priority" // All radio buttons in the group must have the same name
                                                             value="Extreme"      // Value to be submitted when this radio is selected
                                                             checked={selectedPriority === 'Extreme'} // Controlled component: checked if state matches value
-                                                            onChange={(e)=> handlePriorityChange(e.target.value)} // Update state on change
+                                                            onChange={(e) => handlePriorityChange(e.target.value)} // Update state on change
                                                             className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
                                                         />
                                                         <label htmlFor="priority-extreme" className="text-gray-700 text-sm cursor-pointer">Extreme</label> {/* htmlFor matches input id */}
@@ -234,7 +234,7 @@ function Home() {
                                                             name="task-priority" // Same name as others in the group
                                                             value="Moderate"     // Value for this option
                                                             checked={selectedPriority === 'Moderate'}
-                                                            onChange={(e)=> handlePriorityChange(e.target.value)} 
+                                                            onChange={(e) => handlePriorityChange(e.target.value)}
                                                             className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
                                                         />
                                                         <label htmlFor="priority-moderate" className="text-gray-700 text-sm cursor-pointer">Moderate</label>
@@ -248,7 +248,7 @@ function Home() {
                                                             name="task-priority" // Same name
                                                             value="Low"          // Value for this option
                                                             checked={selectedPriority === 'Low'}
-                                                            onChange={(e)=> handlePriorityChange(e.target.value)} // Update state on change
+                                                            onChange={(e) => handlePriorityChange(e.target.value)} // Update state on change
                                                             className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
                                                         />
                                                         <label htmlFor="priority-low" className="text-gray-700 text-sm cursor-pointer">Low</label>
@@ -265,7 +265,7 @@ function Home() {
                                                         rows={4} // Initial number of rows
                                                     />
                                                 </div>
-                                                
+
                                                 <div className="flex flex-col space-y-2">
                                                     <button className='w-max bg-red-500 text-gray-100 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>
                                                         <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-drafting-compass-icon lucide-drafting-compass"><path d="m12.99 6.74 1.93 3.44" /><path d="M19.136 12a10 10 0 0 1-14.271 0" /><path d="m21 21-2.16-3.84" /><path d="m3 21 8.02-14.26" /><circle cx="12" cy="5" r="2" /></svg>
@@ -274,11 +274,11 @@ function Home() {
                                                 </div>
                                             </div>
                                             <div className="space-y-4">
-                                                    <DragDropUploader onFilesSelected={(files) => {
-                                                        if (files.length > 0) {
-                                                            setImage(files[0]); // Assuming you want to handle only the first file
-                                                        }
-                                                    }} width="200px" height="200px" />
+                                                <DragDropUploader onFilesSelected={(files) => {
+                                                    if (files.length > 0) {
+                                                        setImage(files[0]); // Assuming you want to handle only the first file
+                                                    }
+                                                }} width="200px" height="200px" />
                                             </div>
                                         </form>
 

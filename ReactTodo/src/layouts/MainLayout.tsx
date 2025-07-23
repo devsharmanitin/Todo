@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Header from '../components/partials/header';
-import Sidebar from '../components/partials/sidebar';
+import Header from '../components/partials/Header';
+import Sidebar from '../components/partials/Sidebar';
 
 
 const MainLayout = () => {
