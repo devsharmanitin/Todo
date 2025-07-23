@@ -14,9 +14,57 @@ use App\Services\Otp\OtpService;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Services\PasswordService;
+use App\Http\Resources\UserResource;
 
 class JWTAuthController extends Controller
 {
+    /**
+     * Token Authentication and Refresh Token
+     */
+    public function refresh_token(Request $request) {
+        try {
+            // When refreshing, the *expired* access token should be sent in the Authorization header.
+            // JWTAuth::refresh() will then issue a new token.
+            $newToken = JWTAuth::refresh(JWTAuth::getToken());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token refreshed successfully',
+                'access_token'   => $newToken, // Renamed 'token' to 'access_token'
+            ], 200);
+        } catch (TokenExpiredException $e) {
+            // This happens if the grace period for refreshing the token has also expired.
+            // This means the refresh token (i.e., the old access token used for refreshing) is no longer valid.
+            return response()->json([
+                'success' => false,
+                'message' => 'Token has expired and cannot be refreshed (refresh grace period elapsed). Please log in again.',
+                'error'   => $e->getMessage(),
+            ], 401); // 401 Unauthorized, forcing re-login
+        } catch (TokenInvalidException $e) {
+            // Token is malformed or invalid for some other reason
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid token for refresh.',
+                'error'   => $e->getMessage(),
+            ], 401);
+        } catch (JWTException $e) {
+            // Other JWT related errors
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not refresh token (JWT issue)',
+                'error'   => $e->getMessage(),
+            ], 500);
+        } catch (\Exception $e) {
+            // Generic errors
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while refreshing the token',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     // User Registration
     public function register(Request $request) {
         $validator = Validator::make( $request->all(), [
@@ -63,6 +111,66 @@ class JWTAuthController extends Controller
         }
         
 
+    }
+
+    public function login(Request $request) {
+        $credentials = $request->only('email', 'password');
+        try {
+            $token = JWTAuth::attempt($credentials);   
+            if( !$token ) {
+                return response()->json([
+                    'success'  => false,
+                    'message'  => 'unauthorized',
+                    'errors'   => 'Invalid credientials',
+                ], 401);
+            }  
+            $user = auth()->user();   
+            $token = JWTAuth::fromUser($user);
+            return response()->json([
+                'success'  => true,
+                'message'  => 'success',
+                'user'   => new UserResource($user),
+                'access_token'    => $token,
+            ], 200);   
+        } catch (JWTException $e) {
+            return response()->json([
+                'success'  => false,
+                'message'  => 'unauthorized',
+                'errors'   => 'Could not create token',
+            ], 500);
+        }
+    }
+
+    public function getuser() {
+        try {
+            if( ! $user = JWTAuth::parseToken()->authenticate() ) {
+                return response()-json([
+                    'success'  => false,
+                    'messgae'  => 'not found',
+                    'errors'   => 'User not found'
+                ], 404);
+            }
+        } catch (JWTException $e) {
+            return response()->json([
+                'success'  => false,
+                'messgae'  => 'unauthorized',
+                'errors'   => 'Invalid Token'
+            ],400);
+        }
+        return response()->json([
+            'success'  => true,
+            'messgae'  => 'user fetched successfully',
+            'user'   => $user
+        ]);
+
+    }
+
+    public function logout() {
+        JWTAuth::invalidate(JWTAuth::getToken());
+        return response()->json([
+            'success'  => true,
+            'message' => 'Successfully logged out'
+        ]);
     }
 
     public function verify_otp(Request $request)
@@ -116,67 +224,6 @@ class JWTAuthController extends Controller
                 'error'   => $th->getMessage(), // For debugging; remove in production
             ], 500);
         }
-    }
-
-    public function login(Request $request) {
-        $credentials = $request->only('email', 'password');
-        try {
-            $token = JWTAuth::attempt($credentials);   
-            if( !$token ) {
-                return response()->json([
-                    'success'  => false,
-                    'message'  => 'unauthorized',
-                    'errors'   => 'Invalid credientials',
-                ], 401);
-            }  
-            $user = auth()->user();   
-            $token = JWTAuth::fromUser($user);
-            return response()->json([
-                'success'  => true,
-                'message'  => 'success',
-                'token'    => $token,
-            ]);   
-        } catch (JWTException $e) {
-            return response()->json([
-                'success'  => false,
-                'message'  => 'unauthorized',
-                'errors'   => 'Could not create token',
-            ], 500);
-        }
-    }
-
-
-    public function getuser() {
-        try {
-            if( ! $user = JWTAuth::parseToken()->authenticate() ) {
-                return response()-json([
-                    'success'  => false,
-                    'messgae'  => 'not found',
-                    'errors'   => 'User not found'
-                ], 404);
-            }
-        } catch (JWTException $e) {
-            return response()->json([
-                'success'  => false,
-                'messgae'  => 'unauthorized',
-                'errors'   => 'Invalid Token'
-            ],400);
-        }
-        return response()->json([
-            'success'  => true,
-            'messgae'  => 'user fetched successfully',
-            'user'   => $user
-        ]);
-
-    }
-
-
-    public function logout() {
-        JWTAuth::invalidate(JWTAuth::getToken());
-        return response()->json([
-            'success'  => true,
-            'message' => 'Successfully logged out'
-        ]);
     }
 
     public function changePassword(ChangePasswordRequest $request)

@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\JwtMiddleware;
+use App\Http\Middleware\UserActiveStatus;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\JWTAuthController;
@@ -13,8 +14,9 @@ Route::get('status', function( ) {
 Route::post('register', [JWTAuthController::class, 'register']);
 Route::post('login', [JWTAuthController::class, 'login']);
 Route::post('verify-otp', [JWTAuthController::class, 'verify_otp']);
+Route::post('auth/refresh', [JWTAuthController::class, 'refresh_token']);
 
-Route::middleware([JwtMiddleware::class])->group(function () {
+Route::middleware([JwtMiddleware::class, 'jwt.verify', UserActiveStatus::class])->group(function () {
     Route::get('user', [JWTAuthController::class, 'getuser']);
     Route::post('logout', [JWTAuthController::class, 'logout']);
     Route::get('dashboard', [TaskController::class, 'dashboard']);
