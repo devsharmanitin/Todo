@@ -9,7 +9,7 @@ import { ProgressChart } from '../progress/Chart'; // Ensure this path is correc
 import Modal from '../ui/modal'; // Ensure this path is correct
 import TaskCard from '../ui/card'; // Ensure this path is correct
 import GridContainer from '../ui/gridcontainer'; // Ensure this path is correct
-import { getRequest } from '../../helpers/functions'; // Adjust the import path as necessary
+import { getRequest, postRequest } from '../../helpers/functions'; // Adjust the import path as necessary
 import DragDropUploader from '../ui/dragdropuploader';
 
 // Define TypeScript interfaces for better type safety and readability
@@ -53,6 +53,28 @@ interface IDashboardData {
     total_tasks: number;
 }
 
+interface iPriority {
+    id: number;
+    title: string;
+    description: string;
+    color_code: string;
+}
+
+interface iStatus {
+    id: number;
+    title: string;
+}
+
+interface iCategory {
+    id: number;
+    title: string;
+}
+
+interface ITaskData {
+    priorities: iPriority[];
+    statuses: iStatus[];
+    categories: iCategory[];
+}
 
 
 function Home() {
@@ -60,40 +82,71 @@ function Home() {
     const [isOpenTaskModal, setIsOpenTaskModal] = useState(false);
     const [dashboardData, setDashboardData] = useState<IDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [taskdata, setTaskData] = useState<ITaskData | null>(null);
 
     const [title, setTitle] = useState("");
     const [description, handleDescriptionChange] = useState("");
     const [date, setDate] = useState("");
-    const [selectedPriority, handlePriorityChange] = useState("Extreme");
+    const [selectedPriority, handlePriorityChange] = useState(0);
     const [image, setImage] = useState<File | null>(null);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
-            try {
-                // Use your actual getRequest here, or mockGetRequest for testing
-                const response: any = await getRequest("/dashboard"); // Or mockGetRequest("/dashboard");
-                if (response.success) {
-                    setDashboardData(response); // Set the 'data' part of the response
 
-                } else {
-                    toast.error(response.message || "Something went wrong. Please try again.");
-                }
-            } catch (error) {
-                console.error("Failed to fetch dashboard data:", error);
-                toast.error("Network error. Please try again later.");
-            } finally {
-                setLoading(false); // Set loading to false after fetch completes (success or error)
+            const response: any = await getRequest("/dashboard"); // Or mockGetRequest("/dashboard");
+            if (response.success) {
+                setDashboardData(response); // Set the 'data' part of the response
+
+            } else {
+                toast.error(response.message || "Something went wrong. Please try again.");
+
             }
+            setLoading(false);
         };
 
+        const fetchTaskDate = async () => {
+            const taskResponse = await getRequest("/tasks/create");
+            if (taskResponse.success) {
+                setTaskData(taskResponse);
+            } else {
+                toast.error(taskResponse.message || "something went wrong| please try again");
+            }
+        }
+
         fetchDashboardData();
+        fetchTaskDate();
 
     }, []); // Empty dependency array ensures this runs only once after initial render
 
 
-    const handleTaskSubmission = (e: React.FormEvent) => {
+    console.log("DD", dashboardData);
+    const handleTaskSubmission = async (e: React.FormEvent) => {
         e.preventDefault(); // Prevent default form submission behavior
-        console.log("Task submitted");
+
+        if (!title || !date || !description || !selectedPriority || !image) {
+            return toast.error(" Fields are required ");
+        }
+
+        var start_date = new Date();
+        var formatted_date = start_date.toISOString().split('T')[0];
+
+        try {
+            const response = await postRequest('/tasks/store', {
+                "title": title,
+                "description": description,
+                "priority_id": selectedPriority,
+                "due_date": date,
+                "image[]": image,
+                "start_date": formatted_date
+            });
+            if (!response.ok) {
+                console.log("Task Add failed:- ", response);
+            }
+            console.log("submission COmplete:- ", response);
+        } catch (error) {
+            console.log("Error on Task Submission:- ", error);
+        }
+
     }
 
     // Display loading state
@@ -204,55 +257,34 @@ function Home() {
                                                 <div className="flex flex-col space-y-2">
                                                     <label htmlFor="title" className="text-gray-700">Title</label>
                                                     <input
-                                                        type="text" id="title" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                                                        type="text" onChange={(e) => setTitle(e.target.value)} id="title" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
                                                 </div>
                                                 <div className="flex flex-col space-y-2">
                                                     <label htmlFor="date" className="text-gray-700">Date</label>
-                                                    <input type="date" id="date" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                                                    <input type="date" onChange={(e) => setDate(e.target.value)} id="date" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
                                                 </div>
                                                 <legend className="text-gray-700 text-base mb-2">Priority</legend> {/* Corrected label for the group */}
                                                 <div className="flex flex-row space-x-4">
-                                                    {/* Extreme Priority Radio Button */}
-                                                    <div className="flex items-center space-x-2">
-                                                        <input
-                                                            type="radio"
-                                                            id="priority-extreme" // Unique ID for this radio button
-                                                            name="task-priority" // All radio buttons in the group must have the same name
-                                                            value="Extreme"      // Value to be submitted when this radio is selected
-                                                            checked={selectedPriority === 'Extreme'} // Controlled component: checked if state matches value
-                                                            onChange={(e) => handlePriorityChange(e.target.value)} // Update state on change
-                                                            className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
-                                                        />
-                                                        <label htmlFor="priority-extreme" className="text-gray-700 text-sm cursor-pointer">Extreme</label> {/* htmlFor matches input id */}
-                                                    </div>
 
-                                                    {/* Moderate Priority Radio Button */}
-                                                    <div className="flex items-center space-x-2">
-                                                        <input
-                                                            type="radio"
-                                                            id="priority-moderate" // Unique ID
-                                                            name="task-priority" // Same name as others in the group
-                                                            value="Moderate"     // Value for this option
-                                                            checked={selectedPriority === 'Moderate'}
-                                                            onChange={(e) => handlePriorityChange(e.target.value)}
-                                                            className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
-                                                        />
-                                                        <label htmlFor="priority-moderate" className="text-gray-700 text-sm cursor-pointer">Moderate</label>
-                                                    </div>
+                                                    {taskdata?.priorities.map((priority) => (
+                                                        <div key={priority.id} className="flex items-center space-x-2">
+                                                            <input
+                                                                type="radio"
+                                                                id={`priority-${priority.id}`}
+                                                                name="task-priority"
+                                                                value={priority.id}
+                                                                checked={selectedPriority === priority.id}
+                                                                onChange={(e) => handlePriorityChange(Number(e.target.value))}
+                                                                className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
+                                                            />
+                                                            <label htmlFor={`priority-${priority.id}`} className="text-gray-700 text-sm cursor-pointer">
+                                                                {priority.title}
+                                                            </label>
+                                                        </div>
+                                                    ))}
 
-                                                    {/* Low Priority Radio Button */}
-                                                    <div className="flex items-center space-x-2">
-                                                        <input
-                                                            type="radio"
-                                                            id="priority-low" // Unique ID
-                                                            name="task-priority" // Same name
-                                                            value="Low"          // Value for this option
-                                                            checked={selectedPriority === 'Low'}
-                                                            onChange={(e) => handlePriorityChange(e.target.value)} // Update state on change
-                                                            className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
-                                                        />
-                                                        <label htmlFor="priority-low" className="text-gray-700 text-sm cursor-pointer">Low</label>
-                                                    </div>
+
+
                                                 </div>
                                                 <div className="flex flex-col space-y-2">
                                                     <label htmlFor="number" className="text-gray-700">Contact Number</label>

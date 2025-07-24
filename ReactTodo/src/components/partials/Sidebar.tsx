@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import React, { useState, useEffect } from 'react'; // Already imported, but good to be explicit
+import { useAuth } from '../../provider/AuthProvider';
 import { useLocation, Link } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -13,14 +14,6 @@ import Profile from '../../assets/images/profile.svg'; // Adjust path as needed
 import toast, { Toaster } from 'react-hot-toast'; // Toaster is still useful if Sidebar has its own toasts later
 import { getRequest, postRequest } from '../../helpers/functions';
 
-// Define a type for the user object that Sidebar expects
-interface IUser {
-    id: number;
-    name: string;
-    email: string;
-    image: string | null;
-    // Add other user properties that Sidebar needs
-}
 
 // Update SidebarProps to accept the user object
 interface SidebarProps {
@@ -36,31 +29,10 @@ interface NavItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure 'user' prop
     const location = useLocation();
-    const [user, SetUser] = useState<IUser | null>(null);
     const [loading, setLoading] = useState(true); // Loading state for fetching user data
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                // Use your actual getRequest here, or mockGetRequest for testing
-                const response: any = await getRequest("/user"); // Or mockGetRequest("/dashboard");
-                if (response.success) {
-                    SetUser(response.user); // Set the 'data' part of the response
-
-                } else {
-                    toast.error(response.message || "Something went wrong. Please try again.");
-                }
-            } catch (error) {
-                console.error("Failed to fetch dashboard data:", error);
-                toast.error("Network error. Please try again later.");
-            } finally {
-                setLoading(false); // Set loading to false after fetch completes (success or error)
-            }
-        };
-
-        fetchUserData();
-
-    }, []);
+    const { user } = useAuth();
+    console.log("user", user);
 
     const handleLogout = async (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
@@ -68,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
         console.log("RES", response);
         if (response.success) {
             toast.success("Logged out successfully.");
-            window.location.href = "/login"; // 
+            window.location.href = "/login";
             localStorage.removeItem("user");
             localStorage.removeItem("token");
         } else {
@@ -133,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
                                     />
                                 </div>
                                 <div className="text-normal text-center mt-20 font-outfit">
-                                    <h2 className="font-semibold text-white">{user.name}</h2>
+                                    <h2 className="font-semibold text-white">{user.username}</h2>
                                     <p className="text-red-100 text-sm">{user.email}</p>
                                 </div>
                             </div>

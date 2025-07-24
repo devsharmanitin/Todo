@@ -15,6 +15,7 @@ interface User {
     token: string,
     role?: string,
     permissions: string[],
+    image: string,
 }
 
 interface AuthContextType {
@@ -34,7 +35,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const redirectPath = location.state?.path || "/";
 
-    const [user, setUser] = useState<User>({ username: "", email: "", token: "", permissions: [] });
+    const [user, setUser] = useState<User>({ username: "", image: "", email: "", token: "", permissions: [] });
     console.log("AuhhProvider User:- ", user);
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -46,6 +47,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     email: parsedUser.email || "",
                     token: parsedUser.token || "",
                     permissions: parsedUser.permissions || [],
+                    image: parsedUser.image
                 });
             } catch (e) {
                 // If parsing fails, clear localStorage
@@ -57,9 +59,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const login = (userData: any) => {
         if (userData.role === 'admin') {
-            setUser({ username: userData.username, email: userData.email, token: userData.token, permissions: ["view_all"] });
+            setUser({ username: userData.username, image: userData.image, email: userData.email, token: userData.token, permissions: ["view_all"] });
         } else {
-            setUser({ username: userData.username, email: userData.email, token: userData.token, permissions: ["view_own"] });
+            setUser({ username: userData.username, image: userData.image, email: userData.email, token: userData.token, permissions: ["view_own"] });
         }
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("token", userData.token);
@@ -69,7 +71,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const logout = () => {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
-        setUser({ username: "", email: "", token: "", permissions: [] });
+        setUser({ username: "", email: "", image: "", token: "", permissions: [] });
         navigate("/login", { replace: true });
     };
 

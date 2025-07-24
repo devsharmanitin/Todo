@@ -16,7 +16,7 @@ Route::post('login', [JWTAuthController::class, 'login']);
 Route::post('verify-otp', [JWTAuthController::class, 'verify_otp']);
 Route::post('auth/refresh', [JWTAuthController::class, 'refresh_token']);
 
-Route::middleware([JwtMiddleware::class, 'jwt.verify', UserActiveStatus::class])->group(function () {
+Route::middleware([JwtMiddleware::class, UserActiveStatus::class])->group(function () {
     Route::get('user', [JWTAuthController::class, 'getuser']);
     Route::post('logout', [JWTAuthController::class, 'logout']);
     Route::get('dashboard', [TaskController::class, 'dashboard']);
