@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Profile from '../../assets/images/profile.svg'; // Adjust path as needed
 import toast, { Toaster } from 'react-hot-toast'; // Toaster is still useful if Sidebar has its own toasts later
-import { getRequest, postRequest } from '../../helpers/functions';
+import { getRequest, postRequest } from '../../services/apiClient.tsx';
 
 
 // Update SidebarProps to accept the user object

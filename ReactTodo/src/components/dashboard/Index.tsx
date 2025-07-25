@@ -9,7 +9,7 @@ import { ProgressChart } from '../progress/Chart'; // Ensure this path is correc
 import Modal from '../ui/modal'; // Ensure this path is correct
 import TaskCard from '../ui/card'; // Ensure this path is correct
 import GridContainer from '../ui/gridcontainer'; // Ensure this path is correct
-import { getRequest, postRequest } from '../../helpers/functions'; // Adjust the import path as necessary
+import { getRequest, postRequest } from '../../services/apiClient.tsx'; // Adjust the import path as necessary
 import DragDropUploader from '../ui/dragdropuploader';
 
 // Define TypeScript interfaces for better type safety and readability

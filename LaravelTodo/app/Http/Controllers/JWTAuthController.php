@@ -25,13 +25,41 @@ class JWTAuthController extends Controller
         try {
             // When refreshing, the *expired* access token should be sent in the Authorization header.
             // JWTAuth::refresh() will then issue a new token.
-            $newToken = JWTAuth::refresh(JWTAuth::getToken());
+            $token = JWTAuth::getToken();
+            if (!$token && $request->cookie('jwt_token')) {
+                $token = $request->cookie('jwt_token');
+                JWTAuth::setToken($token); // Manually set the token for JWTAuth to use
+            }
+            if (!$token) {
+                \Log::error("Refresh Token Error: No token found in header or cookie for refresh.");
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No token provided for refresh. Please log in again.',
+                ], 401);
+            }
+            $newToken = JWTAuth::refresh($token);
 
-            return response()->json([
+            $response = response()->json([
                 'success' => true,
                 'message' => 'Token refreshed successfully',
-                'access_token'   => $newToken, // Renamed 'token' to 'access_token'
+                'access_token'   => $newToken, // You might omit this if only using cookie
             ], 200);
+
+            // Set the new JWT token as an HTTP-only, secure cookie
+            $response->cookie(
+                'jwt_token', // Name of your cookie
+                $newToken, // The new token value
+                config('jwt.ttl') * 60, // Keep this matching your access token TTL for the cookie
+                                    // If this cookie is purely for refresh and you have a separate refresh token, use refresh_ttl
+                '/',
+                null,
+                config('app.env') === 'production',
+                true,
+                false,
+                'Lax' // Or 'None' if cross-domain and secure
+            );
+            return $response;
+
         } catch (TokenExpiredException $e) {
             // This happens if the grace period for refreshing the token has also expired.
             // This means the refresh token (i.e., the old access token used for refreshing) is no longer valid.
@@ -124,19 +152,45 @@ class JWTAuthController extends Controller
                     'errors'   => 'Invalid credientials',
                 ], 401);
             }  
-            $user = auth()->user();   
-            $token = JWTAuth::fromUser($user);
-            return response()->json([
+            $user = auth()->user();
+            $accessToken = $token; 
+
+            // **Option 1: Store Access Token in HTTP-Only Cookie (Less common, but possible if you only use one token)**
+            // This approach means your client-side JS won't directly read the token,
+            // but the browser will send it automatically with subsequent requests.
+            // If your React app needs to read the token (e.g., for user info in JS),
+            // you'd typically return it in the JSON response as well, and store it in memory.
+
+            $response = response()->json([
                 'success'  => true,
-                'message'  => 'success',
-                'user'   => new UserResource($user),
-                'access_token'    => $token,
-            ], 200);   
+                'message'  => 'Login successful',
+                'user'     => new UserResource($user),
+                'access_token' => $accessToken, // You might omit this if only using cookie
+            ], 200);
+            
+            // Set the JWT token as an HTTP-only, secure cookie
+            // Lifetime: Match your JWT_REFRESH_TTL or a reasonable duration (e.g., 7 days = 10080 minutes)
+            $response->cookie(
+                'jwt_token', 
+                $accessToken,
+                config('jwt.ttl') * 60,
+                '/', // path
+                null, // Domain (null for current domain)
+                config('app.env') === 'production',   
+                true, // HttpOnly: true (not accessible by JavaScript)
+                false, // Raw: false (Laravel encrypts cookies by default)
+                'Lax' // SameSite: 'Lax', 'Strict', or 'None' (if cross-domain and secure)  
+            );
+            return $response;
+
+            
+
+
         } catch (JWTException $e) {
             return response()->json([
                 'success'  => false,
                 'message'  => 'unauthorized',
-                'errors'   => 'Could not create token',
+                'errors'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -144,25 +198,30 @@ class JWTAuthController extends Controller
     public function getuser() {
         try {
             if( ! $user = JWTAuth::parseToken()->authenticate() ) {
-                return response()-json([
+                return response()->json([
                     'success'  => false,
-                    'messgae'  => 'not found',
+                    'message'  => 'not found',
                     'errors'   => 'User not found'
                 ], 404);
             }
+            return response()->json([
+                'success'  => true,
+                'message'  => 'user fetched successfully',
+                'user'     => $user
+            ]);
         } catch (JWTException $e) {
             return response()->json([
                 'success'  => false,
-                'messgae'  => 'unauthorized',
+                'message'  => 'unauthorized',
                 'errors'   => 'Invalid Token'
-            ],400);
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success'  => false,
+                'message'  => 'Unexpected error',
+                'errors'   => $e->getMessage()
+            ], 500);
         }
-        return response()->json([
-            'success'  => true,
-            'messgae'  => 'user fetched successfully',
-            'user'   => $user
-        ]);
-
     }
 
     public function logout() {

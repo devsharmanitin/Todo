@@ -1,6 +1,6 @@
 import React, { useState } from 'react'; // Make sure useState is imported
 import RegisterSVG from '../../assets/images/register.svg'; // Assuming you have this SVG import
-import { postRequest } from "../../helpers/functions";
+import { postRequest } from "../../services/apiClient.tsx";
 import toast, { Toaster } from 'react-hot-toast';
 
 
@@ -69,7 +69,7 @@ const Register: React.FC = () => {
             Username,
             email: Email,
             password: Password,
-            password_confirmation: ConfirmPassword, 
+            password_confirmation: ConfirmPassword,
             RememberMe
         };
 
@@ -94,7 +94,7 @@ const Register: React.FC = () => {
 
     return (
         <div className="flex-1 p-4 md:p-10">
-            <Toaster position="top-center" reverseOrder={false} /> 
+            <Toaster position="top-center" reverseOrder={false} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border border-gray-300 p-2 md:p-6 shadow-lg rounded-lg">
                 <div className="bg-white flex justify-center rounded-lg">
                     <img src={RegisterSVG} className="w-min" alt="Register Illustration" />
@@ -204,7 +204,7 @@ const Register: React.FC = () => {
                             <input
                                 type="checkbox"
                                 checked={RememberMe}
-                                onChange={() => setRememberMe(!RememberMe)} 
+                                onChange={() => setRememberMe(!RememberMe)}
                                 className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 border-gray-300 focus:outline-none focus:ring-white-400 focus:border-transparent "
                             />
                             <label htmlFor="checkbox" className="text-gray-500">I agree to all terms</label>

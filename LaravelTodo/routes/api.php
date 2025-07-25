@@ -11,10 +11,12 @@ use App\Http\Controllers\JWTAuthController;
 Route::get('status', function( ) {
     return response()->json(['Route'=> 'api status', 'message' => 'api enabled']);
 });
-Route::post('register', [JWTAuthController::class, 'register']);
-Route::post('login', [JWTAuthController::class, 'login']);
-Route::post('verify-otp', [JWTAuthController::class, 'verify_otp']);
-Route::post('auth/refresh', [JWTAuthController::class, 'refresh_token']);
+Route::group(['prefix' => 'auth'], function() {
+    Route::post('/register', [JWTAuthController::class, 'register']);
+    Route::post('/login', [JWTAuthController::class, 'login']);
+    Route::post('/verify-otp', [JWTAuthController::class, 'verify_otp']);
+    Route::post('/refresh', [JWTAuthController::class, 'refresh_token']);
+});
 
 Route::middleware([JwtMiddleware::class, UserActiveStatus::class])->group(function () {
     Route::get('user', [JWTAuthController::class, 'getuser']);

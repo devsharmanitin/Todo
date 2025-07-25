@@ -237,7 +237,7 @@ class TaskController extends Controller
                 'status_id'  => $status->id,
                 'name'       => $status->title,
                 'count'      => $count,
-                'percentage' => 0, // will update below
+                'percentage' => 0, 
                 'tasks'      => $tasks,
             ];
         });
@@ -255,7 +255,7 @@ class TaskController extends Controller
         return response()->json([
             'success'          => true,
             'message'          => 'Data fetched successfully',
-            'user'        => $user,
+            'user'             => $user,
             'now'              => $currentDate,
             'users'            => $users,
             'today_tasks'      => $todayTasks,

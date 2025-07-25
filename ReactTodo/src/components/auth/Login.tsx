@@ -1,9 +1,8 @@
 import toast, { Toaster } from 'react-hot-toast';
 import React, { useState } from 'react';
-import { postRequest } from "../../helpers/functions";
+import { postRequest } from "../../services/apiClient";
 import LoginSVG from '../../assets/images/login.svg'; // Assuming you have this SVG import
 import { useAuth } from '../../provider/AuthProvider';
-import { useNavigate } from "react-router-dom";
 
 
 const Login: React.FC = () => {
@@ -11,10 +10,12 @@ const Login: React.FC = () => {
     const [Email, setEmail] = useState("");
     const [Password, setPassword] = useState(""); // Renamed for consistency
     const [RememberMe, setRememberMe] = useState(false);
-    const navigate = useNavigate();
 
     // State to hold validation errors for each field
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+    // Helper to get BaseUrl (should be from environment variables)
+    const BaseUrl = "http://localhost:8000/api";
 
     // Function to validate individual fields
     const validateField = (fieldName: string, value: string): string => {
@@ -59,24 +60,33 @@ const Login: React.FC = () => {
         };
 
         try {
-            const response: any = await postRequest("/login", data); // Call your mock or actual API
-            if (response.success) {
-                console.log("Login successful:", response);
+            const response = await fetch(`${BaseUrl}/auth/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify(data),
+                credentials: 'include',
+            });
+            const responseData = await response.json();
+            if (response.ok && responseData.success) {
+                console.log("Login successful:", responseData);
+                // Call AuthContext's login function to update state and navigate
                 login({
-                    username: response.user.username,
-                    email: response.user.email,
-                    token: response.access_token,
-                    permissions: response.user.permissions
+                    username: responseData.user.username, // Adjust based on your UserResource
+                    email: responseData.user.email,
+                    token: responseData.access_token, // The access token
+                    permissions: responseData.user.permissions || [],
+                    image: responseData.user.image, // Include if your user resource has it
                 });
 
-                const token = response.access_token;
-                localStorage.setItem("token", token); // Store the JWT token
-                toast.success(response.message || "Login successful!");
-                navigate("/");
+                toast.success(responseData.message || "Login successful!");
+                // Navigation handled by AuthProvider's login
 
             } else {
                 // Display specific error message from the backend
-                toast.error(response.message || "Login failed. Please try again.");
+                toast.error(responseData.message || responseData.errors || "Login failed. Please try again.");
             }
         } catch (error) {
             console.error("Login failed:", error);
