@@ -1,10 +1,11 @@
 import React, { useState } from 'react'; // Make sure useState is imported
 import RegisterSVG from '../../assets/images/register.svg'; // Assuming you have this SVG import
-import { postRequest } from "../../services/apiClient.tsx";
 import toast, { Toaster } from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 
 const Register: React.FC = () => {
+    const { authenticatedRequest } = useAuth();
     const [Firstname, setFirstName] = useState("");
     const [Lastname, setLastName] = useState("");
     const [Username, setUserName] = useState("");
@@ -74,7 +75,10 @@ const Register: React.FC = () => {
         };
 
         try {
-            const response: any = await postRequest("/register", data);
+            const response: any = await authenticatedRequest("/register", {
+                method: "POST",
+                body: JSON.stringify(data)
+            });
             console.log("Response", response);
             if (response.success) {
                 const token = response.token;

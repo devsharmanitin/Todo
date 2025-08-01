@@ -1,6 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import React, { useState, useEffect } from 'react'; // Already imported, but good to be explicit
-import { useAuth } from '../../provider/AuthProvider';
+import { useAuth } from '../../context/AuthContext.tsx';
 import { useLocation, Link } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -11,8 +10,7 @@ import {
     LogOut,
 } from 'lucide-react';
 import Profile from '../../assets/images/profile.svg'; // Adjust path as needed
-import toast, { Toaster } from 'react-hot-toast'; // Toaster is still useful if Sidebar has its own toasts later
-import { getRequest, postRequest } from '../../services/apiClient.tsx';
+import { Toaster } from 'react-hot-toast'; // Toaster is still useful if Sidebar has its own toasts later
 
 
 // Update SidebarProps to accept the user object
@@ -28,27 +26,15 @@ interface NavItem {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure 'user' prop
-    const location = useLocation();
-    const [loading, setLoading] = useState(true); // Loading state for fetching user data
+    const location = useLocation(); // Loading state for fetching user data
 
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     console.log("user", user);
 
     const handleLogout = async (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
-        const response = await postRequest("/logout", {});
-        console.log("RES", response);
-        if (response.success) {
-            toast.success("Logged out successfully.");
-            window.location.href = "/login";
-            localStorage.removeItem("user");
-            localStorage.removeItem("token");
-        } else {
-            toast.error(response.message || "Logout failed. Please try again.");
-        }
-        window.location.href = "/login"; // 
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
+
+        await logout();
 
     };
 

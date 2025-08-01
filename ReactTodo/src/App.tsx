@@ -9,38 +9,35 @@ import ViewTask from './components/features/ViewTasks.tsx';
 import VitalTasks from './components/features/VitalTasks.tsx';
 import ChangePassword from './components/auth/ChangePassword.tsx';
 import UserProfile from './components/user/profile.tsx';
-import RequireAuth from './components/auth/RequireAuth.tsx';
+import { ProtectedRoute } from './routes/ProtectedRoutes.tsx';
 import PublicRoute from './routes/PublicRoutes.tsx';
-import { ApiClientProvider } from './services/apiClient.tsx';
 import './App.css';
 
 function App() {
     return (
-        <ApiClientProvider>
-            <Routes>
+        <Routes>
 
-                {/* Routes with Header and Sidebar */}
-                <Route element={<RequireAuth />}>
-                    <Route element={<MainLayout />} >
-                        <Route path="/" element={<Home />} ></Route>
-                        <Route path="/my-tasks" element={<MyTasks />} ></Route>
-                        <Route path="/vital-tasks" element={<VitalTasks />} ></Route>
-                        <Route path="/view-task" element={<ViewTask />} ></Route>
-                        <Route path="/profile" element={<UserProfile />} ></Route>
-                        <Route path="/change-password" element={<ChangePassword />} ></Route>
-                    </Route>
+            {/* Routes with Header and Sidebar */}
+            <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />} >
+                    <Route path="/" element={<Home />} ></Route>
+                    <Route path="/my-tasks" element={<MyTasks />} ></Route>
+                    <Route path="/vital-tasks" element={<VitalTasks />} ></Route>
+                    <Route path="/view-task" element={<ViewTask />} ></Route>
+                    <Route path="/profile" element={<UserProfile />} ></Route>
+                    <Route path="/change-password" element={<ChangePassword />} ></Route>
                 </Route>
+            </Route>
 
-                {/* Route without Authentication */}
+            {/* Route without Authentication */}
 
-                <Route element={<AuthLayout />} >
-                    <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} ></Route>
-                    <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} ></Route>
-                </Route>
+            <Route element={<AuthLayout />} >
+                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} ></Route>
+                <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} ></Route>
+            </Route>
 
 
-            </Routes>
-        </ApiClientProvider>
+        </Routes>
     )
 
 }

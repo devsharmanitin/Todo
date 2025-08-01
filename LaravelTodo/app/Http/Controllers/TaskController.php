@@ -77,6 +77,7 @@ class TaskController extends Controller
             if( $request->hasFile('image') ) {
                 $data['image'] = $request->file('image')->store('tasks', 'public');
             }
+            $data['status'] = TaskStatus::where('title', 'Not Started')->value('id');
 
             $task = Task::create($data);
 
@@ -208,11 +209,12 @@ class TaskController extends Controller
             })
             ->get();
 
-        $todayTasks = Task::where('created_by', $user->id)
-            ->whereDate('start_date', '<=', $currentDate)
-            ->whereDate('due_date', '>=', $currentDate)
-            ->whereHas('status', fn($query) => $query->where('title', '!=', 'Completed'))
-            ->get();
+        // $todayTasks = Task::where('created_by', $user->id)
+        //     ->whereDate('start_date', '<=', $currentDate)
+        //     ->whereDate('due_date', '>=', $currentDate)
+        //     ->whereHas('status', fn($query) => $query->where('title', '!=', 'Completed'))
+        //     ->get();
+        $todayTasks = Task::all();
 
         $upcomingTasks = Task::where('created_by', $user->id)
             ->whereDate('start_date', '>', $currentDate)
@@ -255,14 +257,16 @@ class TaskController extends Controller
         return response()->json([
             'success'          => true,
             'message'          => 'Data fetched successfully',
-            'user'             => $user,
-            'now'              => $currentDate,
-            'users'            => $users,
-            'today_tasks'      => $todayTasks,
-            'upcoming_tasks'   => $upcomingTasks,
-            'completed_tasks'  => $completedTasks,
-            'status_summary'   => $statusSummary,
-            'total_tasks'      => $totalTasks,
+            'data'              => [
+                'user'             => $user,
+                'now'              => $currentDate,
+                'users'            => $users,
+                'today_tasks'      => $todayTasks,
+                'upcoming_tasks'   => $upcomingTasks,
+                'completed_tasks'  => $completedTasks,
+                'status_summary'   => $statusSummary,
+                'total_tasks'      => $totalTasks
+            ],
         ]);
     }
 

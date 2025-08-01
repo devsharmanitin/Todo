@@ -9,8 +9,9 @@ import { ProgressChart } from '../progress/Chart'; // Ensure this path is correc
 import Modal from '../ui/modal'; // Ensure this path is correct
 import TaskCard from '../ui/card'; // Ensure this path is correct
 import GridContainer from '../ui/gridcontainer'; // Ensure this path is correct
-import { getRequest, postRequest } from '../../services/apiClient.tsx'; // Adjust the import path as necessary
 import DragDropUploader from '../ui/dragdropuploader';
+import TruncateWords from '../../services/helper.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 // Define TypeScript interfaces for better type safety and readability
 interface IUser {
@@ -78,11 +79,14 @@ interface ITaskData {
 
 
 function Home() {
+    const { authenticatedRequest } = useAuth();
+
     const [isOpenModal, setIsOpenModal] = useState(false);
     const [isOpenTaskModal, setIsOpenTaskModal] = useState(false);
     const [dashboardData, setDashboardData] = useState<IDashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [taskdata, setTaskData] = useState<ITaskData | null>(null);
+    const [refreshTasks, setRefreshTasks] = useState(false);
 
     const [title, setTitle] = useState("");
     const [description, handleDescriptionChange] = useState("");
@@ -93,9 +97,10 @@ function Home() {
     useEffect(() => {
         const fetchDashboardData = async () => {
 
-            const response: any = await getRequest("/dashboard"); // Or mockGetRequest("/dashboard");
+            const response: any = await authenticatedRequest("/dashboard");
+            console.log("response", response);
             if (response.success) {
-                setDashboardData(response); // Set the 'data' part of the response
+                setDashboardData(response.data); // Set the 'data' part of the response
 
             } else {
                 toast.error(response.message || "Something went wrong. Please try again.");
@@ -105,9 +110,9 @@ function Home() {
         };
 
         const fetchTaskDate = async () => {
-            const taskResponse = await getRequest("/tasks/create");
+            const taskResponse = await authenticatedRequest("/tasks/create");
             if (taskResponse.success) {
-                setTaskData(taskResponse);
+                setTaskData(taskResponse.data);
             } else {
                 toast.error(taskResponse.message || "something went wrong| please try again");
             }
@@ -116,7 +121,7 @@ function Home() {
         fetchDashboardData();
         fetchTaskDate();
 
-    }, []); // Empty dependency array ensures this runs only once after initial render
+    }, [refreshTasks]); // Empty dependency array ensures this runs only once after initial render
 
 
     console.log("DD", dashboardData);
@@ -131,20 +136,28 @@ function Home() {
         var formatted_date = start_date.toISOString().split('T')[0];
 
         try {
-            const response = await postRequest('/tasks/store', {
-                "title": title,
-                "description": description,
-                "priority_id": selectedPriority,
-                "due_date": date,
-                "image[]": image,
-                "start_date": formatted_date
+            const response = await authenticatedRequest('/tasks/store', {
+                method: "POST",
+                body: JSON.stringify({
+                    "title": title,
+                    "description": description,
+                    "priority_id": selectedPriority,
+                    "due_date": date,
+                    "image[]": image,
+                    "start_date": formatted_date
+                }),
+
             });
-            if (!response.ok) {
+            if (response.success === false) {
                 console.log("Task Add failed:- ", response);
             }
             console.log("submission COmplete:- ", response);
+            setRefreshTasks(prev => !prev);
+            setIsOpenTaskModal(false);
         } catch (error) {
             console.log("Error on Task Submission:- ", error);
+            setIsOpenTaskModal(false);
+
         }
 
     }
@@ -325,17 +338,18 @@ function Home() {
                         </div>
                         <div className="space-y-4">
                             {dashboardData.today_tasks.map((task) => (
-                                <TaskCard
+
+                                < TaskCard
                                     key={task.id}
                                     title={task.title}
-                                    description={task.description}
+                                    description={TruncateWords(task.description, 20)}
                                     status={task.status}
                                     statusColor={task.status_color}
                                     priority={task.priority}
                                     priorityColor={task.priority_color}
                                     date={task.date}
                                     image={task.image || Party} // Fallback image if task.image is null
-                                    circleColor={task.status_color}>
+                                    circleColor={task.status_color} >
                                 </TaskCard>
                             ))}
                         </div>
@@ -399,9 +413,9 @@ function Home() {
                             </div>
                         </div>
                     </div>
-                </GridContainer>
+                </GridContainer >
 
-            </div>
+            </div >
         </>
     );
 }

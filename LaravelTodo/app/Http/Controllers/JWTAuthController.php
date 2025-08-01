@@ -2,296 +2,395 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
+use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AuthService;
+use App\Services\Otp\OtpService;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
-use App\Events\UserRegistered;
-use App\Services\Otp\OtpService;
-use Illuminate\Support\Facades\DB;
-use App\Http\Requests\ChangePasswordRequest;
-use App\Services\PasswordService;
-use App\Http\Resources\UserResource;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
+use App\Http\Middleware\JwtMiddleware;
+
 
 class JWTAuthController extends Controller
 {
-    /**
-     * Token Authentication and Refresh Token
+    protected AuthService $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+        
+    }
+
+     /**
+     * Set JWT token in HTTP-only cookie
      */
-    public function refresh_token(Request $request) {
+    private function setTokenCookie($response, string $token)
+    {
+        return $response->cookie(
+            'jwt_token',
+            $token,
+            config('jwt.ttl', 60), // TTL in minutes
+            '/',
+            null, // domain
+            config('app.env') === 'production', // secure (HTTPS only in production)
+            true, // httpOnly
+            false, // raw (don't encode)
+            'Lax' // sameSite
+        );
+    }
+
+    private function getTokenFromRequest(Request $request): ?string
+    {
+        $token = JWTAuth::getToken();
+        if (!$token && $request->cookie('jwt_token')) {
+            $token = $request->cookie('jwt_token');
+        }
+        return $token;
+    }
+
+    private function getTokenExpiryTime(string $token)
+    {
         try {
-            // When refreshing, the *expired* access token should be sent in the Authorization header.
-            // JWTAuth::refresh() will then issue a new token.
-            $token = JWTAuth::getToken();
-            if (!$token && $request->cookie('jwt_token')) {
-                $token = $request->cookie('jwt_token');
-                JWTAuth::setToken($token); // Manually set the token for JWTAuth to use
-            }
-            if (!$token) {
-                \Log::error("Refresh Token Error: No token found in header or cookie for refresh.");
+
+            $payload = JWTAuth::getPayload($token);
+            $expirationTime = $payload['exp'];
+            $currentTime = time();
+            return max( 0, $expirationTime - $currentTime );
+        } catch (\Throwable $th) {
+            return config('jwt.ttl', 60) * 60;  // Convert minutes to seconds
+        }
+    }
+
+    /**
+     * User Registration
+     */
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->register($request->validated());
+            
+            if (!$result['success']) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No token provided for refresh. Please log in again.',
-                ], 401);
+                    'message' => $result['message'],
+                    'errors' => $result['errors'] ?? null
+                ], 400);
             }
-            $newToken = JWTAuth::refresh($token);
+
+            $expire_in = $this->getTokenExpiryTime($result['token']);
 
             $response = response()->json([
                 'success' => true,
-                'message' => 'Token refreshed successfully',
-                'access_token'   => $newToken, // You might omit this if only using cookie
+                'message' => 'User registered successfully',
+                'data' => [
+                    'user' => new UserResource($result['user']),
+                    'access_token' => $result['token'],
+                    'expires_in' => $expire_in,
+                    'requires_verification' => !$result['user']->email_verified_at
+                ]
+            ], 201);
+
+            // Set JWT token in HTTP-only cookie
+            return $this->setTokenCookie($response, $result['token']);
+
+        } catch (\Exception $e) {
+            \Log::error('Registration error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function login(LoginRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->login($request->validated());
+            
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message']
+                ], 401);
+            }
+
+            $expires_in = $this->getTokenExpiryTime($result['token']);
+
+            $response = response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'data'    => [
+                    'user' => new UserResource($result['user']),
+                    'access_token' => $result['token'],
+                    'expires_in'   => $expires_in, 
+                    'requires_verification' => !$result['user']->email_verified_at
+                ],
             ], 200);
 
-            // Set the new JWT token as an HTTP-only, secure cookie
-            $response->cookie(
-                'jwt_token', // Name of your cookie
-                $newToken, // The new token value
-                config('jwt.ttl') * 60, // Keep this matching your access token TTL for the cookie
-                                    // If this cookie is purely for refresh and you have a separate refresh token, use refresh_ttl
+            // Set JWT token in HTTP-only cookie
+            return $this->setTokenCookie($response, $result['token']);
+
+        } catch (\Exception $e) {
+            \Log::error('Login error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Login failed. Please try again.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get authenticated user
+     */
+    public function getUser(): JsonResponse
+    {
+        try {
+            // The user is already authenticated by the middleware
+            $user = auth()->user();
+            $token = $this->getTokenFromRequest(request());
+            
+            $expires_in = $token ? $this->getTokenExpiryTime($token) : 0;
+            return response()->json([
+                'success' => true,
+                'message' => 'User retrieved successfully',
+                'data' => [
+                    'user' => new UserResource($user),
+                    'expires_in' => $expires_in
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Get user error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve user data',
+            ], 500);
+        }
+    }
+
+    /**
+     * Refresh JWT Token
+     */
+    public function refreshToken(Request $request): JsonResponse
+    {
+        try {
+            $token = $this->getTokenFromRequest($request);
+            
+            if (!$token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No token provided for refresh',
+                    'error_code' => 'TOKEN_NOT_PROVIDED'
+                ], 401);
+            }
+
+            $newToken = JWTAuth::setToken($token)->refresh();
+            $expiresIn = $this->getTokenExpiryTime($newToken);
+            
+            $response = response()->json([
+                'success' => true,
+                'message' => 'Token refreshed successfully',
+                'data' => [
+                    'expires_in' => $expiresIn
+                ]
+            ], 200);
+
+            return $this->setTokenCookie($response, $newToken);
+
+        } catch (TokenExpiredException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token has expired and cannot be refreshed. Please log in again.',
+                'error_code' => 'TOKEN_EXPIRED'
+            ], 401);
+
+        } catch (TokenInvalidException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid token provided',
+                'error_code' => 'TOKEN_INVALID'
+            ], 401);
+
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not refresh token',
+                'error_code' => 'JWT_ERROR'
+            ], 500);
+        }
+    }
+
+    public function logout(): JsonResponse
+    {
+        try {
+            $token = $this->getTokenFromRequest(request());
+            
+            if ($token) {
+                JWTAuth::setToken($token)->invalidate();
+            }
+
+            $response = response()->json([
+                'success' => true,
+                'message' => 'Successfully logged out'
+            ], 200);
+
+            // Clear the JWT cookie
+            return $response->cookie(
+                'jwt_token',
+                '',
+                -1, // Expire immediately
                 '/',
                 null,
                 config('app.env') === 'production',
                 true,
                 false,
-                'Lax' // Or 'None' if cross-domain and secure
+                'Lax'
             );
-            return $response;
 
-        } catch (TokenExpiredException $e) {
-            // This happens if the grace period for refreshing the token has also expired.
-            // This means the refresh token (i.e., the old access token used for refreshing) is no longer valid.
-            return response()->json([
-                'success' => false,
-                'message' => 'Token has expired and cannot be refreshed (refresh grace period elapsed). Please log in again.',
-                'error'   => $e->getMessage(),
-            ], 401); // 401 Unauthorized, forcing re-login
-        } catch (TokenInvalidException $e) {
-            // Token is malformed or invalid for some other reason
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid token for refresh.',
-                'error'   => $e->getMessage(),
-            ], 401);
-        } catch (JWTException $e) {
-            // Other JWT related errors
-            return response()->json([
-                'success' => false,
-                'message' => 'Could not refresh token (JWT issue)',
-                'error'   => $e->getMessage(),
-            ], 500);
         } catch (\Exception $e) {
-            // Generic errors
-            return response()->json([
-                'success' => false,
-                'message' => 'An unexpected error occurred while refreshing the token',
-                'error'   => $e->getMessage(),
-            ], 500);
+            \Log::error('Logout error: ' . $e->getMessage());
+            
+            // Even if token invalidation fails, clear the cookie
+            $response = response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully'
+            ], 200);
+
+            return $response->cookie(
+                'jwt_token',
+                '',
+                -1,
+                '/',
+                null,
+                config('app.env') === 'production',
+                true,
+                false,
+                'Lax'
+            );
         }
     }
 
-
-    // User Registration
-    public function register(Request $request) {
-        $validator = Validator::make( $request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
-
-        if( $validator->fails() ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'validation Failed',
-                'error'   => $validator->errors()->ToJson(),
-            ], 400);
-        }
-
+    public function checkAuth(): JsonResponse
+    {
         try {
-            Db::beginTransaction();
-
-            $user = User::create([
-                'name' => $request->get('name'),
-                'email' => $request->get('email'),
-                'password' => Hash::make($request->get('password')), 
-            ]);
-
-            $token = JWTAuth::fromUser($user);
-
-            event(new UserRegistered($user));
-
-            DB::commit();
-
+            // If we reach here, the middleware has already authenticated the user
+            $user = auth()->user();
+            $token = $this->getTokenFromRequest(request());
+            $expiresIn = $token ? $this->getTokenExpiryTime($token) : 0;
+            
             return response()->json([
                 'success' => true,
-                'messgae' => 'User Register Successful',
-                'token'   => $token,
-                'user'    => $user
+                'authenticated' => !!$user,
+                'data' => [
+                    'user' => $user ? new UserResource($user) : null,
+                    'isAuthenticated' => !!$user,
+                    'expires_in' => $expiresIn
+                ]
             ], 200);
-        } catch (JWTException $e) {
-            DB::rollBack();
+
+        } catch (\Exception $e) {
+            \Log::error('Auth check error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(), 
-            ], 502);
-        }
-        
-
-    }
-
-    public function login(Request $request) {
-        $credentials = $request->only('email', 'password');
-        try {
-            $token = JWTAuth::attempt($credentials);   
-            if( !$token ) {
-                return response()->json([
-                    'success'  => false,
-                    'message'  => 'unauthorized',
-                    'errors'   => 'Invalid credientials',
-                ], 401);
-            }  
-            $user = auth()->user();
-            $accessToken = $token; 
-
-            // **Option 1: Store Access Token in HTTP-Only Cookie (Less common, but possible if you only use one token)**
-            // This approach means your client-side JS won't directly read the token,
-            // but the browser will send it automatically with subsequent requests.
-            // If your React app needs to read the token (e.g., for user info in JS),
-            // you'd typically return it in the JSON response as well, and store it in memory.
-
-            $response = response()->json([
-                'success'  => true,
-                'message'  => 'Login successful',
-                'user'     => new UserResource($user),
-                'access_token' => $accessToken, // You might omit this if only using cookie
-            ], 200);
-            
-            // Set the JWT token as an HTTP-only, secure cookie
-            // Lifetime: Match your JWT_REFRESH_TTL or a reasonable duration (e.g., 7 days = 10080 minutes)
-            $response->cookie(
-                'jwt_token', 
-                $accessToken,
-                config('jwt.ttl') * 60,
-                '/', // path
-                null, // Domain (null for current domain)
-                config('app.env') === 'production',   
-                true, // HttpOnly: true (not accessible by JavaScript)
-                false, // Raw: false (Laravel encrypts cookies by default)
-                'Lax' // SameSite: 'Lax', 'Strict', or 'None' (if cross-domain and secure)  
-            );
-            return $response;
-
-            
-
-
-        } catch (JWTException $e) {
-            return response()->json([
-                'success'  => false,
-                'message'  => 'unauthorized',
-                'errors'   => $e->getMessage(),
+                'authenticated' => false,
+                'data' => [
+                    'user' => null,
+                    'isAuthenticated' => false,
+                    'expires_in' => 0,
+                    // 'error_code' => 'UNAUTHORIZED'
+                ],
+                'message' => 'Authentication check failed'
             ], 500);
         }
     }
 
-    public function getuser() {
-        try {
-            if( ! $user = JWTAuth::parseToken()->authenticate() ) {
-                return response()->json([
-                    'success'  => false,
-                    'message'  => 'not found',
-                    'errors'   => 'User not found'
-                ], 404);
-            }
-            return response()->json([
-                'success'  => true,
-                'message'  => 'user fetched successfully',
-                'user'     => $user
-            ]);
-        } catch (JWTException $e) {
-            return response()->json([
-                'success'  => false,
-                'message'  => 'unauthorized',
-                'errors'   => 'Invalid Token'
-            ], 400);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success'  => false,
-                'message'  => 'Unexpected error',
-                'errors'   => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function logout() {
-        JWTAuth::invalidate(JWTAuth::getToken());
-        return response()->json([
-            'success'  => true,
-            'message' => 'Successfully logged out'
-        ]);
-    }
-
-    public function verify_otp(Request $request)
+    /**
+     * Verify OTP
+     */
+     public function verifyOtp(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|exists:users,id',
-            'otp'     => 'required|string',
+            'otp' => 'required|string|size:6',
         ]);
-
+        
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
-
+        
         try {
-            $user = User::find($request->user_id);
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not found',
-                ], 404);
-            }
-
-            $identifier = "user_{$user->id}";
-            $otpService = app(OtpService::class);
-
-            if (!$otpService->verify($identifier, $request->otp)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid or expired OTP',
-                ], 400);
-            }
-
-            // Mark user as verified
-            $user->email_verified_at = now();
-            $user->status = 1; // assuming 1 means active
-            $user->save();
-
+            $result = $this->authService->verifyOtp(
+                $request->user_id,
+                $request->otp
+            );
+            
             return response()->json([
-                'success' => true,
-                'message' => 'User verified successfully',
-            ], 200);
-
-        } catch (\Throwable $th) {
+                'success' => $result['success'],
+                'message' => $result['message']
+            ], $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            \Log::error('OTP verification error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Could not verify OTP, please try again later.',
-                'error'   => $th->getMessage(), // For debugging; remove in production
+                'message' => 'OTP verification failed. Please try again.',
             ], 500);
         }
     }
 
-    public function changePassword(ChangePasswordRequest $request)
+    public function resendOtp(Request $request): JsonResponse
     {
-        $service = new PasswordService();
-
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid user ID',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+        
         try {
-            $result = $service->changePassword(
-                $request->user_id,
+            $result = $this->authService->resendOtp($request->user_id);
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message']
+            ], $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            \Log::error('Resend OTP error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to resend OTP. Please try again.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Change Password
+     */
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->changePassword(
+                auth()->id(),
                 $request->current_password,
                 $request->new_password
             );
@@ -299,15 +398,20 @@ class JWTAuthController extends Controller
             return response()->json([
                 'success' => $result['success'],
                 'message' => $result['message']
-            ], $result['status']);
+            ], $result['success'] ? 200 : 400);
 
-        } catch (\Throwable $th) {
+        } catch (\Exception $e) {
+            \Log::error('Password change error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Could not change password, please try again later.',
-                'error'   => $th->getMessage(), // remove in prod
+                'message' => 'Password change failed. Please try again.',
             ], 500);
         }
     }
 
+   
+    
+
+   
 }

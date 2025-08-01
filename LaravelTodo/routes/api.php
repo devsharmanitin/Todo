@@ -11,39 +11,52 @@ use App\Http\Controllers\JWTAuthController;
 Route::get('status', function( ) {
     return response()->json(['Route'=> 'api status', 'message' => 'api enabled']);
 });
-Route::group(['prefix' => 'auth'], function() {
+
+// public routes 
+Route::prefix('auth')->group(function () {
     Route::post('/register', [JWTAuthController::class, 'register']);
     Route::post('/login', [JWTAuthController::class, 'login']);
-    Route::post('/verify-otp', [JWTAuthController::class, 'verify_otp']);
-    Route::post('/refresh', [JWTAuthController::class, 'refresh_token']);
+    Route::post('/verify-otp', [JWTAuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [JWTAuthController::class, 'resendOtp']);
+    Route::post('/refresh', [JWTAuthController::class, 'refreshToken']);
+    
+    // Move /me endpoint to auth prefix to match frontend expectations
+    Route::get('/me', [JWTAuthController::class, 'getUser'])->middleware([JwtMiddleware::class]);
+    Route::get('/check', [JWTAuthController::class, 'checkAuth'])->middleware([JwtMiddleware::class]);
 });
 
-Route::middleware([JwtMiddleware::class, UserActiveStatus::class])->group(function () {
-    Route::get('user', [JWTAuthController::class, 'getuser']);
-    Route::post('logout', [JWTAuthController::class, 'logout']);
-    Route::get('dashboard', [TaskController::class, 'dashboard']);
+// Protected routes requiring authentication
+Route::middleware([JwtMiddleware::class])->group(function () {
+    // User management - keep these for backward compatibility
+    Route::get('/user', [JWTAuthController::class, 'getUser']);
+    Route::post('/logout', [JWTAuthController::class, 'logout']);
+    Route::post('/change-password', [JWTAuthController::class, 'changePassword']);
+    
+    // Routes requiring active user status
+    Route::middleware([UserActiveStatus::class])->group(function () {
+        Route::get('/dashboard', [TaskController::class, 'dashboard']);
 
-    Route::group(['prefix' => 'tasks'], function () {
-        Route::get('/', [TaskController::class, 'tasks']);
-        Route::get('create', [TaskController::class, 'create']);
-        Route::post('store', [TaskController::class, 'store']);
-        Route::put('update', [TaskController::class, 'update']);
-        Route::delete('delete', [TaskController::class, 'destroy']);
+        Route::group(['prefix' => 'tasks'], function () {
+            Route::get('/', [TaskController::class, 'tasks']);
+            Route::get('create', [TaskController::class, 'create']);
+            Route::post('store', [TaskController::class, 'store']);
+            Route::put('update', [TaskController::class, 'update']);
+            Route::delete('delete', [TaskController::class, 'destroy']);
+        });
+
+        Route::group(['prefix' => 'categories'], function () {
+            Route::get('/', [CommonController::class, 'categories']);
+            Route::get('create', [TaskController::class, 'storeCategory']);
+        });
+
+        Route::group(['prefix' => 'priorities'], function () {
+            Route::get('/', [CommonController::class, 'categories']);
+            Route::get('create', [TaskController::class, 'storePriority']);
+        });
+
+        Route::group(['prefix' => 'statuses'], function () {
+            Route::get('/', [CommonController::class, 'statuses']);
+            Route::get('create', [TaskController::class, 'storeStatus']);
+        });
     });
-
-    Route::group(['prefix' => 'categories'], function () {
-        Route::get('/', [CommonController::class, 'categories']);
-        Route::get('create', [TaskController::class, 'storeCategory']);
-    });
-
-    Route::group(['prefix' => 'priorities'], function () {
-        Route::get('/', [CommonController::class, 'categories']);
-        Route::get('create', [TaskController::class, 'storePriority']);
-    });
-
-    Route::group(['prefix' => 'statuses'], function () {
-        Route::get('/', [CommonController::class, 'statuses']);
-        Route::get('create', [TaskController::class, 'storeStatus']);
-    });
-
 });
