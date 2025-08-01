@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 // Import your assets and components
 import Lucy from '../../assets/images/lucy.svg'; // Ensure this path is correct
 import Party from '../../assets/images/party.svg'; // Ensure this path is correct
-import Upload from '../../assets/images/uploadimage.svg'; // Ensure this path is correct
 import { ProgressChart } from '../progress/Chart'; // Ensure this path is correct
 import Modal from '../ui/modal'; // Ensure this path is correct
 import TaskCard from '../ui/card'; // Ensure this path is correct

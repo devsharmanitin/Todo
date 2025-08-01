@@ -1,5 +1,5 @@
-import toast, { Toaster } from 'react-hot-toast';
-import React, { useState } from 'react';
+import { Toaster } from 'react-hot-toast';
+import React from 'react';
 import LoginSVG from '../../assets/images/login.svg'; // Assuming you have this SVG import
 import { useAuth } from '../../context/AuthContext';
 

@@ -1,6 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import Login from '../components/auth/Login';
-import { Navigate, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 
 export const ProtectedRoute: React.FC = ({ }) => {
