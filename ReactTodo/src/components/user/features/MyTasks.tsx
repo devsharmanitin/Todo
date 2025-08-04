@@ -1,6 +1,6 @@
 import GridContainer from "../../ui/gridcontainer";
 import TaskCard from "../../ui/card";
-import Party from "../../assets/images/party.svg";
+import Party from "../../../assets/images/party.svg";
 
 
 function MyTasks() {

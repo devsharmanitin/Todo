@@ -2,8 +2,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 
 // Import your assets and components
-import Lucy from '../../assets/images/lucy.svg'; // Ensure this path is correct
-import Party from '../../assets/images/party.svg'; // Ensure this path is correct
+import Lucy from '../../../assets/images/lucy.svg'; // Ensure this path is correct
+import Party from '../../../assets/images/party.svg'; // Ensure this path is correct
 import { ProgressChart } from '../../progress/Chart.tsx'; // Ensure this path is correct
 import Modal from '../../ui/modal.tsx'; // Ensure this path is correct
 import TaskCard from '../../ui/card.tsx'; // Ensure this path is correct

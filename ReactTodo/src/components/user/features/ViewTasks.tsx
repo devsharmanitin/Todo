@@ -1,5 +1,5 @@
 import GridContainer from "../../ui/gridcontainer";
-import Party from "../../assets/images/party.svg";
+import Party from "../../../assets/images/party.svg";
 
 
 function ViewTask() {
