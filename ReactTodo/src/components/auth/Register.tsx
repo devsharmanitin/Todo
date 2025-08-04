@@ -67,7 +67,7 @@ const Register: React.FC = () => {
 
         const data = {
             name: Firstname + ' ' + Lastname,
-            Username,
+            username: Username,
             email: Email,
             password: Password,
             password_confirmation: ConfirmPassword,
@@ -75,7 +75,7 @@ const Register: React.FC = () => {
         };
 
         try {
-            const response: any = await authenticatedRequest("/register", {
+            const response: any = await authenticatedRequest("/auth/register", {
                 method: "POST",
                 body: JSON.stringify(data)
             });

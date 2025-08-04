@@ -27,6 +27,8 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'status',
+        'email_verified_at',
     ];
 
     /**
@@ -75,7 +77,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function assignedTasks()
     {
-        return $this->belongsToMany(Task::class, 'task_assignments');
+        return $this->belongsToMany(Task::class, 'task_assignments')->withPivot(['CAN_VIEW', 'CAN_EDIT', 'CAN_DELETE', 'CAN_INVITE']);
     }
 
     public function assignedTeams() {

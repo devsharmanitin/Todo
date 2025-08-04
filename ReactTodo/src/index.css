@@ -55,6 +55,41 @@ font-style: normal;
 src: url('assets/fonts/AVGARDDO_2.woff') format('woff');
 }
 
+@font-face {
+  font-family: 'WiseSans-heavy';
+  src: url('assets/fonts/wise-sans-heavy.woff2') format('woff2');
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'WiseSans-cyrillic';
+  src: url('assets/fonts/wise-sans-inter-cyrillic-normal.woff2') format('woff2');
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'WiseSans-greek';
+  src: url('assets/fonts/wise-sans-inter-greek-normal.woff2') format('woff2');
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'WiseSans-latin';
+  src: url('assets/fonts/wise-sans-inter-latin-ext-normal.woff2') format('woff2');
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'WiseSans-inter';
+  src: url('assets/fonts/wise-sans-inter-normal.woff2') format('woff2');
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -76,6 +111,11 @@ src: url('assets/fonts/AVGARDDO_2.woff') format('woff');
   --font-avantGrade-book: "Avant Garde Book BT", sans-serif;
   --font-avantGrade-demi: "Avant Garde Demi BT", sans-serif;
   --font-avantGrade-bt: "Avant Garde Demi Oblique BT", sans-serif;
+  --font-wise-heavy: "WiseSans-heavy", sans-serif;
+  --font-wise-cyrillic: "WiseSans-cyrillic", sans-serif;
+  --font-wise-greek: "WiseSans-greek", sans-serif;
+  --font-wise-latin: "WiseSans-latin", sans-serif;
+  --font-wise-inter: "WiseSans-inter", sans-serif;
 }
 
 .font-outfit {
@@ -104,6 +144,26 @@ src: url('assets/fonts/AVGARDDO_2.woff') format('woff');
 
 .font-bt {
   font-family: var(--font-avantGrade-bt);
+}
+
+.font-wise {
+  font-family: var(--font-wise-heavy);
+}
+
+.font-wise-cl {
+  font-family: var(--font-wise-cyrillic);
+}
+
+.font-wise-gr {
+  font-family: var(--font-wise-greek);
+}
+
+.font-wise-lt {
+  font-family: var(--font-wise-latin);
+}
+
+.font-wise-it {
+  font-family: var(--font-wise-inter);
 }
 
 *{

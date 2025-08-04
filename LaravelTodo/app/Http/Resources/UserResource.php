@@ -22,7 +22,7 @@ class UserResource extends JsonResource
             'updated_at' => $this->updated_at,
             'permissions' => $this->getAllPermissions()->pluck('name'),
             'role' => $this->getRoleNames()->first(),
-            'type' => 'admin'
+            'status' => $this->status
         ];
     }
 }

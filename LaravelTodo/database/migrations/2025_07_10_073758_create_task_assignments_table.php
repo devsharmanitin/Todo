@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('task_id')->constrained();
             $table->foreignId('user_id')->constrained();
+            $table->boolean('CAN_EDIT')->default(false);
+            $table->boolean('CAN_VIEW')->default(false);
+            $table->boolean('CAN_DELETE')->default(false);
+            $table->boolean('CAN_INVITE')->default(false);
             $table->timestamps();
         });
     }

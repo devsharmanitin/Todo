@@ -7,9 +7,9 @@ interface PublicRouteProps {
 }
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, isVerified } = useAuth();
 
-    if (user && isAuthenticated) {
+    if (user && isAuthenticated && isVerified) {
         return <Navigate to="/" replace />;
     }
 

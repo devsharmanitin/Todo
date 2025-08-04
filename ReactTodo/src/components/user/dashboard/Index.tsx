@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 // Import your assets and components
 import Lucy from '../../assets/images/lucy.svg'; // Ensure this path is correct
 import Party from '../../assets/images/party.svg'; // Ensure this path is correct
-import { ProgressChart } from '../progress/Chart'; // Ensure this path is correct
-import Modal from '../ui/modal'; // Ensure this path is correct
-import TaskCard from '../ui/card'; // Ensure this path is correct
-import GridContainer from '../ui/gridcontainer'; // Ensure this path is correct
-import DragDropUploader from '../ui/dragdropuploader';
-import TruncateWords from '../../services/helper.tsx';
-import { useAuth } from '../../context/AuthContext.tsx';
+import { ProgressChart } from '../../progress/Chart.tsx'; // Ensure this path is correct
+import Modal from '../../ui/modal.tsx'; // Ensure this path is correct
+import TaskCard from '../../ui/card.tsx'; // Ensure this path is correct
+import GridContainer from '../../ui/gridcontainer.tsx'; // Ensure this path is correct
+import DragDropUploader from '../../ui/dragdropuploader.tsx';
+import TruncateWords from '../../../services/helper.tsx';
+import { useAuth } from '../../../context/AuthContext.tsx';
 
 // Define TypeScript interfaces for better type safety and readability
 interface IUser {
@@ -123,49 +123,64 @@ function Home() {
     }, [refreshTasks]); // Empty dependency array ensures this runs only once after initial render
 
 
-    console.log("DD", dashboardData);
+    
     const handleTaskSubmission = async (e: React.FormEvent) => {
-        e.preventDefault(); // Prevent default form submission behavior
+        e.preventDefault();
 
         if (!title || !date || !description || !selectedPriority || !image) {
-            return toast.error(" Fields are required ");
+            return toast.error("All fields are required");
         }
 
-        var start_date = new Date();
-        var formatted_date = start_date.toISOString().split('T')[0];
+        const start_date = new Date();
+        const formatted_date = start_date.toISOString().split('T')[0];
+
+        // Prepare FormData
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('priority_id', String(selectedPriority));
+        formData.append('due_date', date);
+        formData.append('start_date', formatted_date);
+
+        // For image input (handle single or multiple files)
+        if (Array.isArray(image)) {
+            image.forEach((img: File) => {
+                formData.append('image[]', img);
+            });
+        } else {
+            formData.append('image[]', image); // use `image[]` if your backend expects an array
+        }
 
         try {
             const response = await authenticatedRequest('/tasks/store', {
-                method: "POST",
-                body: JSON.stringify({
-                    "title": title,
-                    "description": description,
-                    "priority_id": selectedPriority,
-                    "due_date": date,
-                    "image[]": image,
-                    "start_date": formatted_date
-                }),
-
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    // Do NOT set 'Content-Type': browser handles it when using FormData
+                },
+                body: formData,
             });
+
             if (response.success === false) {
-                console.log("Task Add failed:- ", response);
+                console.log("Task Add failed:", response);
             }
-            console.log("submission COmplete:- ", response);
+
+            console.log("Submission Complete:", response);
             setRefreshTasks(prev => !prev);
             setIsOpenTaskModal(false);
         } catch (error) {
-            console.log("Error on Task Submission:- ", error);
+            console.log("Error on Task Submission:", error);
             setIsOpenTaskModal(false);
-
         }
+    };
 
-    }
 
     // Display loading state
     if (loading) {
         return (
             <div className="flex-1 p-4 md:p-10 flex justify-center items-center h-screen">
-                <p className="text-gray-700 text-lg">Loading dashboard data...</p>
+                <p className="text-gray-700 text-lg font-wise">Loading dashboard data...</p>
                 <Toaster position="top-center" reverseOrder={false} />
             </div>
         );
@@ -175,7 +190,7 @@ function Home() {
     if (!dashboardData) {
         return (
             <div className="flex-1 p-4 md:p-10 flex justify-center items-center h-screen">
-                <p className="text-red-500 text-lg">Failed to load dashboard. Please try again.</p>
+                <p className="text-red-500 text-lg font-poppins">Failed to load dashboard. Please try again.</p>
                 <Toaster position="top-center" reverseOrder={false} />
             </div>
         );
@@ -278,22 +293,34 @@ function Home() {
                                                 <legend className="text-gray-700 text-base mb-2">Priority</legend> {/* Corrected label for the group */}
                                                 <div className="flex flex-row space-x-4">
 
-                                                    {taskdata?.priorities.map((priority) => (
-                                                        <div key={priority.id} className="flex items-center space-x-2">
-                                                            <input
-                                                                type="radio"
-                                                                id={`priority-${priority.id}`}
-                                                                name="task-priority"
-                                                                value={priority.id}
-                                                                checked={selectedPriority === priority.id}
-                                                                onChange={(e) => handlePriorityChange(Number(e.target.value))}
-                                                                className="appearance-none border border-gray-300 checked:bg-red-500 checked:border-red-500 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent cursor-pointer"
-                                                            />
-                                                            <label htmlFor={`priority-${priority.id}`} className="text-gray-700 text-sm cursor-pointer">
-                                                                {priority.title}
-                                                            </label>
-                                                        </div>
-                                                    ))}
+                                                    {taskdata?.priorities.map((priority) => {
+                                                        const isSelected = selectedPriority === priority.id;
+
+                                                        return (
+                                                            <div key={priority.id} className="flex items-center space-x-2">
+                                                                <input
+                                                                    type="radio"
+                                                                    id={`priority-${priority.id}`}
+                                                                    name="task-priority"
+                                                                    value={priority.id}
+                                                                    checked={isSelected}
+                                                                    onChange={(e) => handlePriorityChange(Number(e.target.value))}
+                                                                    className="appearance-none border border-gray-300 p-2 rounded-full focus:outline-none  focus:border-transparent cursor-pointer"
+                                                                    style={{
+                                                                        backgroundColor: isSelected
+                                                                            ? priority.color_code || '#ef4444' // Tailwind's bg-red-500 fallback
+                                                                            : 'transparent',
+                                                                    }}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`priority-${priority.id}`}
+                                                                    className="text-gray-700 text-sm cursor-pointer"
+                                                                >
+                                                                    {priority.title}
+                                                                </label>
+                                                            </div>
+                                                        );
+                                                    })}
 
 
 

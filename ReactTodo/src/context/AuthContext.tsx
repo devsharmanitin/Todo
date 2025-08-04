@@ -10,7 +10,8 @@ interface User {
     permissions: string[],
     role: string,
     type: string,
-    image?: string
+    image?: string,
+    status: number
 }
 
 interface AuthState {
@@ -19,6 +20,7 @@ interface AuthState {
     error: string | null,
     tokenExpiry: number | null
     isAuthenticated: boolean,
+    isVerified: boolean
 }
 
 interface LoginCredentials {
@@ -62,6 +64,14 @@ interface AuthContextType extends AuthState {
     register: (userData: RegisterData) => Promise<{ success: boolean; error?: string }>;
     checkAuthStatus: () => Promise<void>;
     authenticatedRequest: <T = any>(endpoint: string, options?: RequestInit) => Promise<ApiResponse<T>>;
+    dispatch: React.Dispatch<AuthAction>;
+    hasRole: (roleName: string) => boolean;
+    hasPermission:  (PermissionName: string) => boolean;
+}
+
+interface OTPReesponse {
+    success: boolean,
+    message: string,
 }
 
 // Auth Context
@@ -75,8 +85,11 @@ const AUTH_ACTIONS = {
     LOGOUT: 'LOGOUT',
     REFRESH_TOKEN: 'REFRESH_TOKEN',
     SET_LOADING: 'SET_LOADING',
-    CHECK_AUTH: 'CHECK_AUTH'
+    CHECK_AUTH: 'CHECK_AUTH',
+    VERIFIED: 'VERIFIED',
+    NOT_VERIFIED: 'NOT_VERIFIED'
 } as const;
+
 
 type AuthAction =
     | { type: 'LOGIN_START' }
@@ -85,7 +98,9 @@ type AuthAction =
     | { type: 'LOGOUT' }
     | { type: 'REFRESH_TOKEN'; payload: { tokenExpiry: number } }
     | { type: 'SET_LOADING'; payload: boolean }
-    | { type: 'CHECK_AUTH'; payload: { user: User | null; isAuthenticated: boolean; tokenExpiry: number | null } };
+    | { type: 'CHECK_AUTH'; payload: { user: User | null; isAuthenticated: boolean; tokenExpiry: number | null } }
+    | { type: 'VERIFIED'; payload: boolean }
+    | { type: 'NOT_VERIFIED'; payload: boolean };
 
 
 // Initial Auth State
@@ -94,7 +109,8 @@ const initialAuthState: AuthState = {
     isAuthenticated: false,
     isLoading: true,
     error: null,
-    tokenExpiry: null
+    tokenExpiry: null,
+    isVerified: false
 };
 
 // Auth Reducer
@@ -146,6 +162,16 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
                 isLoading: false,
                 tokenExpiry: action.payload.tokenExpiry
             };
+        case AUTH_ACTIONS.VERIFIED:
+            return {
+                ...state,
+                isVerified: true
+            };
+        case AUTH_ACTIONS.NOT_VERIFIED:
+            return {
+                ...state,
+                isVerified: false
+            }
         default:
             return state;
     }
@@ -227,6 +253,7 @@ class ApiService {
             body: JSON.stringify(userData),
         });
     }
+
 }
 
 const apiService = new ApiService();
@@ -327,6 +354,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
             const response = await apiService.getUser();
+            console.log("Res:- ", response);
 
             // Calculate token expiry from response
             const tokenExpiry = Date.now() + (response.data.expires_in * 1000);
@@ -339,6 +367,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     tokenExpiry
                 }
             });
+
+            if( response.data.user.status === 1 ) {
+                dispatch({ type: AUTH_ACTIONS.VERIFIED, payload: true });
+            }
         } catch (error) {
             dispatch({
                 type: AUTH_ACTIONS.CHECK_AUTH,
@@ -435,13 +467,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
+    const hasRole = (roleName: string): boolean => {
+        return state.user?.role === roleName;
+    }
+
+    const hasPermission = ( permissionName: string ): boolean => {
+        return state.user?.permissions?.includes(permissionName) || false;
+    }
+
+
     const value: AuthContextType = {
         ...state,
         login,
         logout,
         register,
         checkAuthStatus,
-        authenticatedRequest
+        authenticatedRequest,
+        dispatch,
+        hasRole,
+        hasPermission
     };
 
     return (

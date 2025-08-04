@@ -51,6 +51,13 @@ class Task extends Model
         ];
     }
 
+    public const PERMISSIONS = [
+        'CAN_EDIT' => true,
+        'CAN_VIEW' => true,
+        'CAN_DELETE' => true,
+        'CAN_INVITE' => true,
+    ];
+
     protected static function booted()
     {
         static::creating(function ($task) {
@@ -86,14 +93,23 @@ class Task extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function assignedUsers() 
+    public function assignedUsers()
     {
-        return $this->belongsToMany(User::class, 'task_assignments');
+        return $this->belongsToMany(User::class, 'task_assignments')
+                    ->withPivot(array_keys(self::PERMISSIONS))
+                    ->withTimestamps();
     }
 
     public function assignedTeams()
     {
         return $this->belongsToMany(User::class, 'team_members');
+    }
+
+    public function checkPermission(USER $user , string $permission) {
+        return $this->assignedUsers()
+                ->where('user_id', $user->id)
+                ->where($permission, true)
+                ->exists(); 
     }
 
 }

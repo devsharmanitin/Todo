@@ -1,10 +1,22 @@
 import { useAuth } from "../context/AuthContext";
 import Login from '../components/auth/Login';
-import { Outlet } from "react-router-dom";
+import { useNavigate, Outlet } from "react-router-dom";
+import { useEffect } from "react";
 
 
-export const ProtectedRoute: React.FC = ({ }) => {
-    const { isAuthenticated, isLoading } = useAuth();
+export const ProtectedRoute: React.FC = () => {
+    const { isAuthenticated, isLoading, isVerified } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!isLoading) {
+            if (!isAuthenticated) {
+                navigate("/login");
+            } else if (!isVerified) {
+                navigate("/verify/profile");
+            }
+        }
+    }, [isAuthenticated, isLoading, isVerified, navigate]);
 
     if (isLoading) {
         return (
@@ -14,9 +26,10 @@ export const ProtectedRoute: React.FC = ({ }) => {
         );
     }
 
-    if (!isAuthenticated) {
-        return <Login />;
+    // If redirecting, render nothing
+    if (!isAuthenticated || !isVerified) {
+        return null;
     }
 
-    return <>{<Outlet />}</>;
+    return <Outlet />;
 };

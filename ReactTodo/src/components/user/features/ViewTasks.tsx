@@ -1,54 +1,10 @@
-import GridContainer from "../ui/gridcontainer";
-import TaskCard from "../ui/card";
+import GridContainer from "../../ui/gridcontainer";
 import Party from "../../assets/images/party.svg";
 
 
-function VitalTasks() {
+function ViewTask() {
     return (
         <GridContainer className="md:mt-0 ">
-            <div className="bg-white md:p-4 rounded-3xl shadow-lg border border-gray-300 p-4">
-                <div className="flex justify-between items-center mb-4 font-demi">
-                    <h2 className="relative text-2xl font-semibold text-gray-800 before:absolute before:bottom-0 before:w-20 before:h-[3px] before:bg-red-500 before:content-['']">Vital Tasks</h2>
-                </div>
-                <div className="space-y-4">
-                    <TaskCard
-                        title="Attend Michal's Birthday Party"
-                        description="Buy gift on the way and pick up cake form the backery. way and pick up cake form the backery. (6 PM | Fresh Elements)..."
-                        status="Not Started"
-                        statusColor="red"
-                        priority="Moderate"
-                        priorityColor="blue"
-                        date="20/06/2025"
-                        image={Party}
-                        circleColor="red"
-                        className="bg-gray-200 border-gray-400">
-                    </TaskCard>
-                    <TaskCard
-                        title="Attend Michal's Birthday Party"
-                        description="Buy gift on the way and pick up cake form the backery. way and pick up cake form the backery. (6 PM | Fresh Elements)..."
-                        status="Not Started"
-                        statusColor="red"
-                        priority="Moderate"
-                        priorityColor="blue"
-                        date="20/06/2025"
-                        image={Party}
-                        circleColor="red"
-                        className="border-gray-400">
-                    </TaskCard>
-                    <TaskCard
-                        title="Attend Michal's Birthday Party"
-                        description="Buy gift on the way and pick up cake form the backery. way and pick up cake form the backery. (6 PM | Fresh Elements)..."
-                        status="Not Started"
-                        statusColor="red"
-                        priority="Moderate"
-                        priorityColor="blue"
-                        date="20/06/2025"
-                        image={Party}
-                        circleColor="red"
-                        className="border-gray-400">
-                    </TaskCard>
-                </div>
-            </div>
             <div className="bg-white md:p-4 rounded-3xl shadow-lg border border-gray-300 p-4">
 
                 <div className="py-5 px-4 relative font-poppins">
@@ -93,4 +49,4 @@ function VitalTasks() {
 }
 
 
-export default VitalTasks;
+export default ViewTask;

@@ -25,7 +25,8 @@ class TaskController extends Controller
             'start_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:start_date',
             'is_vital' => 'sometimes|boolean',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'sometimes|array',
+            'image.*' => 'image|max:2048',
             'assigned_users' => 'nullable|array',
             'assigned_users.*' => 'exists:users,id',
         ];
@@ -45,22 +46,25 @@ class TaskController extends Controller
 
     public function create() {
         $categories = DB::table('task_categories')->select('id', 'title')->get();
-        $priorities = DB::table('task_priorities')->select('id', 'title')->get();
-        $statuses   = DB::table('task_statuses')->select('id', 'title')->get();
+        $priorities = DB::table('task_priorities')->select('id', 'title','color_code')->get();
+        $statuses   = DB::table('task_statuses')->select('id', 'title', 'color_code')->get();
 
         return response()->json([
             'success' => true,
             'message' => 'Data fetched successfully',
-            'categories' => $categories,
-            'priorities' => $priorities,
-            'statuses'   => $statuses,
+            'data'      => [
+                'categories' => $categories,
+                'priorities' => $priorities,
+                'statuses'   => $statuses,
+            ],
         ]);
     }
 
-    public function store( Request $request) {
+    public function store(Request $request)
+    {
+        $validator = $this->validate($request, false);
 
-        $validator = $this->validate( $request, false );
-        if( $validator->fails() ) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
@@ -69,22 +73,31 @@ class TaskController extends Controller
         }
 
         $data = $validator->validated();
+        $user = Auth::user();
 
         try {
-            // Start Transcations 
             DB::beginTransaction();
 
-            if( $request->hasFile('image') ) {
+            if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('tasks', 'public');
             }
-            $data['status'] = TaskStatus::where('title', 'Not Started')->value('id');
 
+            $data['status'] = TaskStatus::where('title', 'Not Started')->value('id');
             $task = Task::create($data);
 
-            $assigningUsers = collect( $data['assigned_users'] ?? [] )
-                            ->push(Auth::id())
-                            ->unique();
-            $task->assignedUsers()->sync($assigningUsers);
+            $assigningUsers = collect($data['assigned_users'] ?? [])
+                ->push($user->id)
+                ->unique();
+
+            foreach ($assigningUsers as $userId) {
+                $permissions = ($userId == $user->id)
+                    ? Task::PERMISSIONS
+                    : ['CAN_VIEW' => true];
+
+                $task->assignedUsers()->syncWithoutDetaching([
+                    $userId => $permissions
+                ]);
+            }
 
             DB::commit();
 
@@ -93,9 +106,7 @@ class TaskController extends Controller
                 'message' => 'Task created successfully',
                 'task' => $task->load(['category', 'status', 'priority', 'assignedUsers']),
             ]);
-
         } catch (\Throwable $th) {
-
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -103,10 +114,12 @@ class TaskController extends Controller
                 'error' => $th->getMessage(),
             ], 500);
         }
-
     }
 
-    public function update( Request $request, int $id ) {
+    public function update(Request $request, int $id)
+    {
+        $task = Task::findOrFail($id);
+        $this->authorize('CAN_EDIT', $task);
 
         $validator = $this->validate($request, true); 
 
@@ -123,8 +136,6 @@ class TaskController extends Controller
         try {
             DB::beginTransaction();
 
-            $task = Task::findOrFail($id);
-
             if ($request->hasFile('image')) {
                 $data['image'] = $request->file('image')->store('tasks', 'public');
             }
@@ -132,7 +143,22 @@ class TaskController extends Controller
             $task->update($data);
 
             if (!empty($data['assigned_users'])) {
-                $task->assignedUsers()->sync($data['assigned_users']);
+                $currentUserId = Auth::id();
+                $newAssignees = collect($data['assigned_users'])->unique();
+
+                // Detach users not in the new list
+                $task->assignedUsers()->whereNotIn('user_id', $newAssignees)->detach();
+
+                // Reattach users with appropriate permissions
+                foreach ($newAssignees as $userId) {
+                    $permissions = ($userId == $currentUserId)
+                        ? Task::PERMISSIONS
+                        : ['CAN_VIEW' => true]; // Default for collaborators
+
+                    $task->assignedUsers()->syncWithoutDetaching([
+                        $userId => $permissions
+                    ]);
+                }
             }
 
             DB::commit();
@@ -142,9 +168,7 @@ class TaskController extends Controller
                 'message' => 'Task updated successfully',
                 'task' => $task->load(['category', 'status', 'priority', 'assignedUsers']),
             ]);
-
         } catch (\Throwable $th) {
-
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -152,8 +176,8 @@ class TaskController extends Controller
                 'error' => $th->getMessage(),
             ], 500);
         }
-
     }
+
 
     public function destroy( Reqeust $request , int $id) {
         try {

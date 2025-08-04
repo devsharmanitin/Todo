@@ -2,9 +2,12 @@ import { Toaster } from 'react-hot-toast';
 import React from 'react';
 import LoginSVG from '../../assets/images/login.svg'; // Assuming you have this SVG import
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 
 const Login: React.FC = () => {
+    const navigate = useNavigate();
     const { login, error } = useAuth();
     const [formData, setFormData] = React.useState({
         email: '',
@@ -21,7 +24,10 @@ const Login: React.FC = () => {
 
     const handleSubmission = async (e: React.FormEvent) => {
         e.preventDefault();
-        await login(formData);
+        const response = await login(formData);
+        if(response.success === true ) {
+            navigate("/verify/profile");
+        }
 
     };
 
@@ -83,7 +89,12 @@ const Login: React.FC = () => {
                             </button>
                         </div>
                     </form>
-                    <p className="text-gray-700 mt-3 text-sm">Don't have an account? <a href="#" className="font-poppins text-red-500">Sign Up</a></p>
+                    <p className="text-gray-700 mt-3 text-sm">
+                        Don't have an account?{" "}
+                        <Link to="/register" className="font-poppins text-red-500">
+                            Sign Up
+                        </Link>
+                    </p>
                 </div>
                 <div className="bg-white flex justify-center rounded-lg">
                     <img src={LoginSVG} className="w-min" alt="Login Illustration" />

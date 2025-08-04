@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use App\Notifications\SendOTPNotification;
 
 class AuthService
 {
@@ -16,6 +17,7 @@ class AuthService
     public function __construct(OtpService $otpService)
     {
         $this->otpService = $otpService;
+        $this->user = auth()->user();
     }
 
     /**
@@ -29,14 +31,16 @@ class AuthService
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
+                'username' => $data['username'],
                 'password' => Hash::make($data['password']),
                 'status' => 0, // Inactive until email verification
             ]);
+            $user->assignRole('user');
 
             $token = JWTAuth::fromUser($user);
 
             // Send OTP for email verification
-            $this->sendVerificationOtp($user);
+            // $this->sendVerificationOtp($user);
 
             event(new UserRegistered($user));
 
@@ -124,19 +128,22 @@ class AuthService
         }
 
         $identifier = "user_{$user->id}";
-
-        if (!$this->otpService->verify($identifier, $otp)) {
+        $result = $this->otpService->verify($identifier, $otp);
+        \Log::info("Result:- ", $result);
+        if (!$result['success'] === true) {
             return [
-                'success' => false,
-                'message' => 'Invalid or expired OTP'
+                'success' => $result['success'],
+                'message' => 'Invalid or Expired OTP',
             ];
         }
+        \Log::info("update user");
 
         // Mark user as verified and active
         $user->update([
             'email_verified_at' => now(),
             'status' => 1 // Active
         ]);
+        $user->save();
 
         return [
             'success' => true,
@@ -197,12 +204,19 @@ class AuthService
         }
 
         try {
-            $this->sendVerificationOtp($user);
+            $response = $this->sendVerificationOtp($user);
+            if( $response ) {
 
-            return [
-                'success' => true,
-                'message' => 'OTP sent successfully'
-            ];
+                return [
+                    'success' => true,
+                    'message' => 'OTP sent successfully'
+                ];
+            }else {
+                 return [
+                    'success' => false,
+                    'message' => 'Something went wrong'
+                ];
+            }
 
         } catch (\Exception $e) {
             \Log::error('Failed to resend OTP: ' . $e->getMessage());
@@ -217,9 +231,17 @@ class AuthService
     /**
      * Send verification OTP
      */
-    private function sendVerificationOtp(User $user): void
+    private function sendVerificationOtp(User $user): bool
     {
         $identifier = "user_{$user->id}";
-        $this->otpService->generate($identifier, $user->email);
+        $otp = $this->otpService->generate($identifier); // This returns an int
+
+        try {
+            $user->notify(new SendOTPNotification($otp)); // No need to store $response, notify() returns void
+            return true;
+        } catch (\Throwable $th) {
+            \Log::error("Failed to send OTP", ['error' => $th->getMessage()]);
+            return false;
+        }
     }
 }

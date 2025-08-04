@@ -28,14 +28,14 @@ class RoleAndPermissionSeeder extends Seeder
             'view-progress',
         ];
 
-        $this->assign_values($roles, Role::class);
-        $this->assign_values($permissions, Permission::class);
+        $this->assign_values($roles, Role::class, 'api');
+        $this->assign_values($permissions, Permission::class, 'api');
     }
 
-    public function assign_values(array $values, string $model): void
+    public function assign_values(array $values, string $model, string $guard): void
     {
         foreach ($values as $value) {
-            $model::firstOrCreate(['name' => $value]);
+            $model::firstOrCreate(['name' => $value, 'guard_name' => $guard]);
         }
     }
 }

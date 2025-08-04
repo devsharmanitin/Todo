@@ -342,13 +342,14 @@ class JWTAuthController extends Controller
             
             return response()->json([
                 'success' => $result['success'],
-                'message' => $result['message']
+                'message' => $result['message'],
             ], $result['success'] ? 200 : 400);
         } catch (\Exception $e) {
             \Log::error('OTP verification error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'OTP verification failed. Please try again.',
+                'error_code' => 'INVALID_OTP',
             ], 500);
         }
     }
