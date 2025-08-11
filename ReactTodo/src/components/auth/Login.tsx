@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
-    const { login, error } = useAuth();
+    const { login, error, dispatch } = useAuth();
     const [formData, setFormData] = React.useState({
         email: '',
         password: ''
@@ -25,8 +25,13 @@ const Login: React.FC = () => {
     const handleSubmission = async (e: React.FormEvent) => {
         e.preventDefault();
         const response = await login(formData);
-        if(response.success === true ) {
+
+        console.log("Resposne:- ", response);
+
+        if( response.requires_verification ) {
             navigate("/verify/profile");
+        } else {
+            dispatch({ type: 'VERIFIED', payload: true, requires_verification: false });
         }
 
     };

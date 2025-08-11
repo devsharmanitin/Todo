@@ -38,9 +38,10 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
         Route::group(['prefix' => 'tasks'], function () {
             Route::get('/', [TaskController::class, 'tasks']);
+            Route::get('/<task:id>', [TaskController::class, 'view']);
             Route::get('create', [TaskController::class, 'create']);
             Route::post('store', [TaskController::class, 'store']);
-            Route::put('update', [TaskController::class, 'update']);
+            Route::put('update/{<task:id}>', [TaskController::class, 'update']);
             Route::delete('delete', [TaskController::class, 'destroy']);
         });
 

@@ -59,7 +59,7 @@ const LoginOTP = () => {
                 return; // Stop execution if API call was unsuccessful
             }
             toast.success("Profile verified Successfully");
-            dispatch({ type: "VERIFIED", payload: true });
+            dispatch({ type: "VERIFIED", payload: true, requires_verification: response.data.requires_verification });
             // Navigate to the dashboard or home page on successful login
             setTimeout(() => {
                 navigate("/");

@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Models\User;
 
 class RoleAndPermissionSeeder extends Seeder
 {
@@ -14,20 +15,8 @@ class RoleAndPermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        $roles = [
-            'admin',
-            'manager',
-            'user',
-        ];
-
-        $permissions = [
-            'create-task',
-            'edit-task',
-            'view-task',
-            'assign-task',
-            'view-progress',
-        ];
-
+        $roles = User::$roles;
+        $permissions = User::$permissions;
         $this->assign_values($roles, Role::class, 'api');
         $this->assign_values($permissions, Permission::class, 'api');
     }

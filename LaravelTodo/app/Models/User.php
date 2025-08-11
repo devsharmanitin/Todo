@@ -18,6 +18,22 @@ class User extends Authenticatable implements JWTSubject
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens, HasRoles;
 
+    public static array $roles = [
+        'admin',
+        'manager',
+        'user',
+    ];
+
+    public static array $permissions = [
+        'CREATE_TASK',
+        'EDIT_TASK',
+        'VIEW_TASK',
+        'ASSIGN_TASK',
+        'DELETE_TASK',
+        'VIEW_PROGRESS',
+        'MANAGE_USER',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -84,5 +100,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->belbelongsToMany(Team::class, 'team_members');
     }
 
+    public function AssignPermission() {
+        $role = $this->roles->first->pluck('name');
+        if( $role === 'user' ) {
+            return $this->givePermissionTo(['CREATE_TASK', 'EDIT_TASK', 'VIEW_TASK', 'ASSIGN_TAKS', 'DELETE_TASK']);
+        }
+        return;
+    }
     
 }

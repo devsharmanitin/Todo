@@ -167,7 +167,8 @@ class JWTAuthController extends Controller
                 'message' => 'User retrieved successfully',
                 'data' => [
                     'user' => new UserResource($user),
-                    'expires_in' => $expires_in
+                    'expires_in' => $expires_in,
+                    'requires_verification' => !$user->email_verified_at,
                 ]
             ], 200);
 

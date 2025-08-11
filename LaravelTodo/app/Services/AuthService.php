@@ -37,6 +37,29 @@ class AuthService
             ]);
             $user->assignRole('user');
 
+            if ($user->hasRole('user')) {
+                $user->givePermissionTo([
+                    'VIEW_TASK',
+                    'CREATE_TASK', 
+                    'EDIT_TASK',
+                    'DELETE_TASK',
+                    'ASSIGN_TASK'
+                ]);
+            }
+
+            if ($user->hasRole('admin')) {
+                $user->givePermissionTo([
+                    'CREATE_TASK',
+                    'EDIT_TASK',
+                    'VIEW_TASK',
+                    'ASSIGN_TASK',
+                    'DELETE_TASK',
+                    'VIEW_PROGRESS',
+                    'MANAGE_USER',
+                ]);
+            }
+            
+
             $token = JWTAuth::fromUser($user);
 
             // Send OTP for email verification

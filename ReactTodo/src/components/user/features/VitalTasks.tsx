@@ -12,6 +12,7 @@ function VitalTasks() {
                 </div>
                 <div className="space-y-4">
                     <TaskCard
+                        key={1}
                         title="Attend Michal's Birthday Party"
                         description="Buy gift on the way and pick up cake form the backery. way and pick up cake form the backery. (6 PM | Fresh Elements)..."
                         status="Not Started"
@@ -24,6 +25,7 @@ function VitalTasks() {
                         className="bg-gray-200 border-gray-400">
                     </TaskCard>
                     <TaskCard
+                        key={2}
                         title="Attend Michal's Birthday Party"
                         description="Buy gift on the way and pick up cake form the backery. way and pick up cake form the backery. (6 PM | Fresh Elements)..."
                         status="Not Started"
@@ -36,6 +38,7 @@ function VitalTasks() {
                         className="border-gray-400">
                     </TaskCard>
                     <TaskCard
+                        key={3}
                         title="Attend Michal's Birthday Party"
                         description="Buy gift on the way and pick up cake form the backery. way and pick up cake form the backery. (6 PM | Fresh Elements)..."
                         status="Not Started"

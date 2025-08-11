@@ -79,7 +79,13 @@ class TaskController extends Controller
             DB::beginTransaction();
 
             if ($request->hasFile('image')) {
-                $data['image'] = $request->file('image')->store('tasks', 'public');
+                $files = $request->file('image');
+            
+                // Get the last uploaded file from the array
+                $lastFile = end($files);
+            
+                // Store the last image and assign to the `image` field
+                $data['image'] = $lastFile->store('tasks', 'public');
             }
 
             $data['status'] = TaskStatus::where('title', 'Not Started')->value('id');
@@ -220,6 +226,25 @@ class TaskController extends Controller
             'user'    => $user,
             'task'    => $task
         ]);
+    }
+
+    public function view(Request $request, number $id) {
+        try {
+            $task = Task::find($id)->first();
+            return response()->json([
+                'success'   => true,
+                'message'   => 'task fetched successfully',
+                'data'      => [
+                    'task' => $task
+                ]
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'error_code' => 'TASK_NOT_FOUND',
+                'error'   => $th->getMessage()
+            ]);
+        }
     }
 
     public function dashboard()

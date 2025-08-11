@@ -1,8 +1,49 @@
 import GridContainer from "../../ui/gridcontainer";
 import Party from "../../../assets/images/party.svg";
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useAuth } from "../../../context/AuthContext";
+import toast, { Toaster } from 'react-hot-toast';
 
+interface ITask {
+    id: number;
+    title: string;
+    description: string;
+    status: string;
+    status_color: string; // Assuming your backend provides colors or you map them
+    priority: string;
+    priority_color: string; // Assuming your backend provides colors or you map them
+    date: string;
+    image: string | null;
+    completed_at?: string; // Optional, for completed tasks
+}
 
 function ViewTask() {
+    const { taskID } = useParams();
+    const { authenticatedRequest } = useAuth();
+
+    const [TaskData, setTaskData] = useState<ITask | null>(null);
+
+    useEffect( () => {
+        const fetchtaskData = async () => {
+            try {
+                const response = await authenticatedRequest(`tasks/${taskID}`);
+                if (!response.success) {
+                    toast.error('Something went wrong');
+                    return;
+                }
+                setTaskData(response.data.task);
+            } catch (error: unknown) {
+                if( error instanceof Error ) {
+                    toast.error(error.message);
+                } else {
+                    toast.error('Caught an unknown error type:');
+                }
+            }
+        }
+        fetchtaskData();
+    }, [taskID] )
+
     return (
         <GridContainer className="md:mt-0 ">
             <div className="bg-white md:p-4 rounded-3xl shadow-lg border border-gray-300 p-4">
@@ -15,22 +56,15 @@ function ViewTask() {
                             <img src={Party} className="w-full" />
                         </div>
                         <div className="flex-1">
-                            <h2 className='text-gray-700 mb-3 font-bold'>Attend Michal's Birthday Party</h2>
-                            <p className='text-xs text-gray-500 mb-2'>Priority: <span className='text-red-500'>Extreme</span></p>
-                            <p className='text-xs text-gray-500 mb-2'>Status: <span className='text-green-400'>Completed</span></p>
-                            <p className='text-xs text-gray-500 mb-2'>Completed: <span className='text-gray-400'>2 Days Ago</span></p>
+                            <h2 className='text-gray-700 mb-3 font-bold'>{TaskData?.title}</h2>
+                            <p className='text-xs text-gray-500 mb-2'>Priority: <span className='text-red-500'>{TaskData?.priority}</span></p>
+                            <p className='text-xs text-gray-500 mb-2'>Status: <span className='text-green-400'>{TaskData?.status}</span></p>
+                            <p className='text-xs text-gray-500 mb-2'>Completed: <span className='text-gray-400'>2 Days ago</span></p>
                         </div>
                     </div>
                     <div className="flex flex-col justify-between space-y-3 mt-3 ">
                         <p className='text-gray-500 text-sm'>
-                            Task Title: Document Submission.
-                            Objective: To submit required documents for something important
-                            Task Description: Review the list of documents required for submission and ensure all necessary documents are ready. Organize the documents accordingly and scan them if physical copies need to be submitted digitally. Rename the scanned files appropriately for easy identification and verify the accepted file formats. Upload the documents securely to the designated platform, double-check for accuracy, and obtain confirmation of successful submission. Follow up if necessary to ensure proper processing.
-                            Additional Notes:
-                            Ensure that the documents are authentic and up-to-date.
-                            Maintain confidentiality and security of sensitive information during the submission process.
-                            If there are specific guidelines or deadlines for submission, adhere to them diligently.
-                            Deadline for Submission: End of Day
+                            {TaskData?.description}
                         </p>
 
                     </div>

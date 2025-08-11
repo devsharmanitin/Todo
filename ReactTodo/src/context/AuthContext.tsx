@@ -20,7 +20,8 @@ interface AuthState {
     error: string | null,
     tokenExpiry: number | null
     isAuthenticated: boolean,
-    isVerified: boolean
+    isVerified: boolean,
+    requires_verification: boolean
 }
 
 interface LoginCredentials {
@@ -41,9 +42,9 @@ interface AuthResponse {
     data: {
         user: User,
         access_token?: string,
-        expires_in: number
+        expires_in: number,
+        requires_verification: boolean;
     },
-    requires_verification?: boolean;
 }
 
 interface ApiResponse<T = any> {
@@ -59,7 +60,7 @@ interface ApiError {
 }
 
 interface AuthContextType extends AuthState {
-    login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
+    login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string, requires_verification: boolean }>;
     logout: () => Promise<void>;
     register: (userData: RegisterData) => Promise<{ success: boolean; error?: string }>;
     checkAuthStatus: () => Promise<void>;
@@ -99,7 +100,7 @@ type AuthAction =
     | { type: 'REFRESH_TOKEN'; payload: { tokenExpiry: number } }
     | { type: 'SET_LOADING'; payload: boolean }
     | { type: 'CHECK_AUTH'; payload: { user: User | null; isAuthenticated: boolean; tokenExpiry: number | null } }
-    | { type: 'VERIFIED'; payload: boolean }
+    | { type: 'VERIFIED'; payload: boolean, requires_verification: boolean }
     | { type: 'NOT_VERIFIED'; payload: boolean };
 
 
@@ -110,7 +111,8 @@ const initialAuthState: AuthState = {
     isLoading: true,
     error: null,
     tokenExpiry: null,
-    isVerified: false
+    isVerified: false,
+    requires_verification: true
 };
 
 // Auth Reducer
@@ -165,7 +167,8 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         case AUTH_ACTIONS.VERIFIED:
             return {
                 ...state,
-                isVerified: true
+                isVerified: true,
+                requires_verification: true,
             };
         case AUTH_ACTIONS.NOT_VERIFIED:
             return {
@@ -369,7 +372,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
 
             if( response.data.user.status === 1 ) {
-                dispatch({ type: AUTH_ACTIONS.VERIFIED, payload: true });
+                dispatch({ type: AUTH_ACTIONS.VERIFIED, payload: true, requires_verification: response.data.requires_verification });
             }
         } catch (error) {
             dispatch({
@@ -383,7 +386,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
-    const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
+    const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string, requires_verification: boolean; }> => {
         try {
             dispatch({ type: AUTH_ACTIONS.LOGIN_START });
 
@@ -398,14 +401,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }
             });
 
-            return { success: true };
+            return { success: true, requires_verification: response.data.requires_verification ?? false };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Login failed';
             dispatch({
                 type: AUTH_ACTIONS.LOGIN_FAILURE,
                 payload: { error: errorMessage }
             });
-            return { success: false, error: errorMessage };
+            return { success: false, error: errorMessage, requires_verification: false };
         }
     };
 

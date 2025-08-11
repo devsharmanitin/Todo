@@ -24,7 +24,7 @@ function App() {
                     <Route path="/" element={<Home />} ></Route>
                     <Route path="/my-tasks" element={<MyTasks />} ></Route>
                     <Route path="/vital-tasks" element={<VitalTasks />} ></Route>
-                    <Route path="/view-task" element={<ViewTask />} ></Route>
+                    <Route path="/view-task/:id" element={<ViewTask />} ></Route>
                     <Route path="/profile" element={<UserProfile />} ></Route>
                     <Route path="/change-password" element={<ChangePassword />} ></Route>
                 </Route>

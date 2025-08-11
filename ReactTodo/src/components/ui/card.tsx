@@ -1,6 +1,9 @@
 import React from 'react';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 interface TaskCardProps {
+  key: number;
   title: string;
   description: string;
   status: string;
@@ -14,6 +17,7 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
+  key,
   title,
   description,
   status,
@@ -25,8 +29,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
   circleColor = 'gray',
   className = '',
 }) => {
+
+    
+
   return (
-    <div className={`border border-gray-200 rounded-lg py-4 px-3 relative font-poppins ${className}`}>
+    <div className={`border border-gray-200 rounded-lg py-4 px-3 relative font-poppins ${className}`} >
       <div className="flex items-center justify-between">
         {/* Circle */}
         <div
@@ -62,7 +69,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
         {image && (
           <div className="w-15 h-15 md:w-20 md:w-20 rounded-lg mt-2">
-            <img src={image} alt="task" className="w-full rounded-lg object-cover" />
+            <img src={'http://localhost:8000/storage/' + image} alt="task" className="w-full rounded-lg object-cover" />
           </div>
         )}
       </div>

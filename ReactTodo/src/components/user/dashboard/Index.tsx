@@ -11,6 +11,7 @@ import GridContainer from '../../ui/gridcontainer.tsx'; // Ensure this path is c
 import DragDropUploader from '../../ui/dragdropuploader.tsx';
 import TruncateWords from '../../../services/helper.tsx';
 import { useAuth } from '../../../context/AuthContext.tsx';
+import { Link } from 'react-router-dom';
 
 // Define TypeScript interfaces for better type safety and readability
 interface IUser {
@@ -86,6 +87,7 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [taskdata, setTaskData] = useState<ITaskData | null>(null);
     const [refreshTasks, setRefreshTasks] = useState(false);
+    const [getTaskData, getTasksData] = useState(false);
 
     const [title, setTitle] = useState("");
     const [description, handleDescriptionChange] = useState("");
@@ -108,7 +110,7 @@ function Home() {
             setLoading(false);
         };
 
-        const fetchTaskDate = async () => {
+        const fetchTaskData = async () => {
             const taskResponse = await authenticatedRequest("/tasks/create");
             if (taskResponse.success) {
                 setTaskData(taskResponse.data);
@@ -118,7 +120,7 @@ function Home() {
         }
 
         fetchDashboardData();
-        fetchTaskDate();
+        fetchTaskData();
 
     }, [refreshTasks]); // Empty dependency array ensures this runs only once after initial render
 
@@ -364,7 +366,7 @@ function Home() {
                         </div>
                         <div className="space-y-4">
                             {dashboardData.today_tasks.map((task) => (
-
+                                <Link to={`/task/${task.id}`}>
                                 < TaskCard
                                     key={task.id}
                                     title={task.title}
@@ -377,6 +379,7 @@ function Home() {
                                     image={task.image || Party} // Fallback image if task.image is null
                                     circleColor={task.status_color} >
                                 </TaskCard>
+                                </Link>
                             ))}
                         </div>
                     </div>
