@@ -22,13 +22,31 @@ interface IUser {
     // Add other user properties if needed
 }
 
+interface PriorityProps {
+    id: number,
+    title: string,
+    color_code: string
+}
+
+interface StatusProps {
+    id: number,
+    title: string,
+    color_code: string
+}
+
+interface CategoryProps {
+    id: number,
+    title: string,
+    color_code: string
+}
+
 interface ITask {
     id: number;
     title: string;
     description: string;
-    status: string;
+    status: StatusProps;
     status_color: string; // Assuming your backend provides colors or you map them
-    priority: string;
+    priority: PriorityProps;
     priority_color: string; // Assuming your backend provides colors or you map them
     date: string;
     image: string | null;
@@ -95,6 +113,8 @@ function Home() {
     const [selectedPriority, handlePriorityChange] = useState(0);
     const [image, setImage] = useState<File | null>(null);
 
+
+
     useEffect(() => {
         const fetchDashboardData = async () => {
 
@@ -111,10 +131,13 @@ function Home() {
         };
 
         const fetchTaskData = async () => {
+            console.log("Fetch Task Data Working");
             const taskResponse = await authenticatedRequest("/tasks/create");
             if (taskResponse.success) {
+                console.log("TR", taskResponse);
                 setTaskData(taskResponse.data);
             } else {
+                console.log("error in fetchTaskData", taskResponse);
                 toast.error(taskResponse.message || "something went wrong| please try again");
             }
         }
@@ -125,7 +148,7 @@ function Home() {
     }, [refreshTasks]); // Empty dependency array ensures this runs only once after initial render
 
 
-    
+
     const handleTaskSubmission = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -197,6 +220,8 @@ function Home() {
             </div>
         );
     }
+
+    console.log("Dashboard Data", dashboardData);
 
 
     // Now that we know dashboardData is not null, we can safely access its properties
@@ -295,7 +320,7 @@ function Home() {
                                                 <legend className="text-gray-700 text-base mb-2">Priority</legend> {/* Corrected label for the group */}
                                                 <div className="flex flex-row space-x-4">
 
-                                                    {taskdata?.priorities.map((priority) => {
+                                                    {taskdata?.priorities?.map((priority) => {
                                                         const isSelected = selectedPriority === priority.id;
 
                                                         return (
@@ -366,19 +391,19 @@ function Home() {
                         </div>
                         <div className="space-y-4">
                             {dashboardData.today_tasks.map((task) => (
-                                <Link to={`/task/${task.id}`}>
-                                < TaskCard
-                                    key={task.id}
-                                    title={task.title}
-                                    description={TruncateWords(task.description, 20)}
-                                    status={task.status}
-                                    statusColor={task.status_color}
-                                    priority={task.priority}
-                                    priorityColor={task.priority_color}
-                                    date={task.date}
-                                    image={task.image || Party} // Fallback image if task.image is null
-                                    circleColor={task.status_color} >
-                                </TaskCard>
+                                <Link key={task.id} to={`/task/${task.id}`}>
+                                    <TaskCard
+                                        id={task.id}
+                                        title={task.title}
+                                        description={TruncateWords(task.description, 20)}
+                                        status={task.status} // ✅ full object { id, title }
+                                        statusColor={task.status.color_code}
+                                        priority={task.priority} // ✅ full object { id, title }
+                                        priorityColor={task.priority.color_code}
+                                        date={task.date}
+                                        image={task.image || Party}
+                                        circleColor={task.status_color}
+                                    />
                                 </Link>
                             ))}
                         </div>
@@ -434,7 +459,7 @@ function Home() {
                                             )}
                                         </div>
                                         <div className="flex flex-col justify-between space-y-3 mt-3 px-8">
-                                            <p className='text-xs text-gray-500'>Status: <span className={`text-${task.status_color}-400`}>{task.status}</span></p>
+                                            <p className='text-xs text-gray-500'>Status: <span className={`text-${task.status_color}-400`}>{task.status.title}</span></p>
                                             <p className='text-xs text-gray-500'>Completed: <span className='text-gray-400'>{task.completed_at || 'N/A'}</span></p>
                                         </div>
                                     </div>

@@ -36,13 +36,13 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::middleware([UserActiveStatus::class])->group(function () {
         Route::get('/dashboard', [TaskController::class, 'dashboard']);
 
-        Route::group(['prefix' => 'tasks'], function () {
+        Route::prefix('tasks')->group(function () {
             Route::get('/', [TaskController::class, 'tasks']);
-            Route::get('/<task:id>', [TaskController::class, 'view']);
             Route::get('create', [TaskController::class, 'create']);
             Route::post('store', [TaskController::class, 'store']);
-            Route::put('update/{<task:id}>', [TaskController::class, 'update']);
-            Route::delete('delete', [TaskController::class, 'destroy']);
+            Route::get('/{id}', [TaskController::class, 'view']);
+            Route::put('update/{id}', [TaskController::class, 'update']);
+            Route::delete('delete/{id}', [TaskController::class, 'destroy']);
         });
 
         Route::group(['prefix' => 'categories'], function () {

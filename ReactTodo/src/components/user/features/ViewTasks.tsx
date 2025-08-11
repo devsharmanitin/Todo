@@ -1,17 +1,37 @@
 import GridContainer from "../../ui/gridcontainer";
 import Party from "../../../assets/images/party.svg";
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from "../../../context/AuthContext";
 import toast, { Toaster } from 'react-hot-toast';
+
+
+interface PriorityProps {
+    id: number,
+    title: string,
+    color_code?: string
+}
+
+interface StatusProps {
+    id: number,
+    title: string,
+    color_code?: string
+}
+
+interface CategoryProps {
+    id: number,
+    title: string,
+    color_code?: string
+}
+
 
 interface ITask {
     id: number;
     title: string;
     description: string;
-    status: string;
+    status: StatusProps;
     status_color: string; // Assuming your backend provides colors or you map them
-    priority: string;
+    priority: PriorityProps;
     priority_color: string; // Assuming your backend provides colors or you map them
     date: string;
     image: string | null;
@@ -19,22 +39,23 @@ interface ITask {
 }
 
 function ViewTask() {
-    const { taskID } = useParams();
+    const navigate = useNavigate();
     const { authenticatedRequest } = useAuth();
 
+    const { id } = useParams();
     const [TaskData, setTaskData] = useState<ITask | null>(null);
 
-    useEffect( () => {
+    useEffect(() => {
         const fetchtaskData = async () => {
             try {
-                const response = await authenticatedRequest(`tasks/${taskID}`);
+                const response = await authenticatedRequest(`/tasks/${id}`);
                 if (!response.success) {
                     toast.error('Something went wrong');
                     return;
                 }
                 setTaskData(response.data.task);
             } catch (error: unknown) {
-                if( error instanceof Error ) {
+                if (error instanceof Error) {
                     toast.error(error.message);
                 } else {
                     toast.error('Caught an unknown error type:');
@@ -42,7 +63,35 @@ function ViewTask() {
             }
         }
         fetchtaskData();
-    }, [taskID] )
+    }, [id]);
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault();
+
+        const confirmed = window.confirm("Do you want to delete the Task?");
+        if (!confirmed) return; // stop if user cancels
+
+        try {
+            const response = await authenticatedRequest(`/tasks/delete/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response?.success) {
+                toast.success("Task deleted successfully.");
+                navigate('/index');
+            } else {
+                toast.error(response?.message || "Failed to delete the task.");
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error('An unexpected error occurred.');
+            }
+        }
+    };
+
+    console.log("TaskData", TaskData);
 
     return (
         <GridContainer className="md:mt-0 ">
@@ -57,8 +106,8 @@ function ViewTask() {
                         </div>
                         <div className="flex-1">
                             <h2 className='text-gray-700 mb-3 font-bold'>{TaskData?.title}</h2>
-                            <p className='text-xs text-gray-500 mb-2'>Priority: <span className='text-red-500'>{TaskData?.priority}</span></p>
-                            <p className='text-xs text-gray-500 mb-2'>Status: <span className='text-green-400'>{TaskData?.status}</span></p>
+                            <p className='text-xs text-gray-500 mb-2'>Priority: <span className='text-red-500'>{TaskData?.priority.title}</span></p>
+                            <p className='text-xs text-gray-500 mb-2'>Status: <span className='text-green-400'>{TaskData?.status.title}</span></p>
                             <p className='text-xs text-gray-500 mb-2'>Completed: <span className='text-gray-400'>2 Days ago</span></p>
                         </div>
                     </div>
@@ -69,7 +118,7 @@ function ViewTask() {
 
                     </div>
                     <div className="flex justify-end space-x-2 items-center mb-4 mt-10 font-demi">
-                        <button className='bg-red-100 text-red-500 hover:bg-red-500 hover:text-gray-100 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>
+                        <button onClick={handleDelete} className='bg-red-100 text-red-500 hover:bg-red-500 hover:text-gray-100 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                         </button>
                         <button className='bg-red-100 text-red-500 hover:bg-red-500 hover:text-gray-100 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>

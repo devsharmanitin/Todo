@@ -185,9 +185,9 @@ class TaskController extends Controller
     }
 
 
-    public function destroy( Reqeust $request , int $id) {
+    public function destroy( Request $request , int $id) {
         try {
-            Db::beginTransaction();
+            DB::beginTransaction();
 
             $task = Task::with(['assignedUsers'])->findOrFail($id);
 
@@ -228,9 +228,10 @@ class TaskController extends Controller
         ]);
     }
 
-    public function view(Request $request, number $id) {
+    public function view(Request $request, $id) {
         try {
-            $task = Task::find($id)->first();
+            $task = Task::find($id)
+                ->with(['status:id,title,color_code', 'priority:id,title,color_code'])->first();
             return response()->json([
                 'success'   => true,
                 'message'   => 'task fetched successfully',
@@ -258,12 +259,12 @@ class TaskController extends Controller
             })
             ->get();
 
-        // $todayTasks = Task::where('created_by', $user->id)
-        //     ->whereDate('start_date', '<=', $currentDate)
-        //     ->whereDate('due_date', '>=', $currentDate)
-        //     ->whereHas('status', fn($query) => $query->where('title', '!=', 'Completed'))
-        //     ->get();
-        $todayTasks = Task::all();
+        $todayTasks = Task::with(['status:title,id,color_code', 'priority:title,id,color_code'])
+            ->where('created_by', $user->id)
+            ->whereDate('start_date', '<=', $currentDate)
+            ->whereDate('due_date', '>=', $currentDate)
+            ->whereHas('status', fn($q) => $q->where('title', '!=', 'Completed'))
+            ->get();
 
         $upcomingTasks = Task::where('created_by', $user->id)
             ->whereDate('start_date', '>', $currentDate)
