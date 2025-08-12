@@ -31,6 +31,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/user', [JWTAuthController::class, 'getUser']);
     Route::post('/logout', [JWTAuthController::class, 'logout']);
     Route::post('/change-password', [JWTAuthController::class, 'changePassword']);
+    Route::post('/update-profile', [JWTAuthController::class, 'UpdateProfile']);
     
     // Routes requiring active user status
     Route::middleware([UserActiveStatus::class])->group(function () {

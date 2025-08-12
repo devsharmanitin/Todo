@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AuthService;
@@ -408,6 +409,26 @@ class JWTAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Password change failed. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        try {
+            $userId = auth()->id();
+            $response = $this->authService->updateProfile($userId, $request->validated());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile Updated Successfully',
+                'response' => $response
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => $e->getMessage()
             ], 500);
         }
     }

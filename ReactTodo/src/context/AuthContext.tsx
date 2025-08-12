@@ -3,15 +3,21 @@ import type { ReactNode } from "react";
 
 interface User {
     id: number,
+    name: string,
     username: string,
     email: string,
+    phone: number,
     created_at: string,
     updated_at: string,
     permissions: string[],
     role: string,
     type: string,
     image?: string,
-    status: number
+    status: number,
+    address: string,
+    city: string,
+    state: string,
+    country: string
 }
 
 interface AuthState {
@@ -67,7 +73,7 @@ interface AuthContextType extends AuthState {
     authenticatedRequest: <T = any>(endpoint: string, options?: RequestInit) => Promise<ApiResponse<T>>;
     dispatch: React.Dispatch<AuthAction>;
     hasRole: (roleName: string) => boolean;
-    hasPermission:  (PermissionName: string) => boolean;
+    hasPermission: (PermissionName: string) => boolean;
 }
 
 interface OTPReesponse {
@@ -371,7 +377,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }
             });
 
-            if( response.data.user.status === 1 ) {
+            if (response.data.user.status === 1) {
                 dispatch({ type: AUTH_ACTIONS.VERIFIED, payload: true, requires_verification: response.data.requires_verification });
             }
         } catch (error) {
@@ -474,7 +480,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return state.user?.role === roleName;
     }
 
-    const hasPermission = ( permissionName: string ): boolean => {
+    const hasPermission = (permissionName: string): boolean => {
         return state.user?.permissions?.includes(permissionName) || false;
     }
 

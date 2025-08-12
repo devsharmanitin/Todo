@@ -9,6 +9,7 @@ import ViewTask from './components/user/features/ViewTasks.tsx';
 import VitalTasks from './components/user/features/VitalTasks.tsx';
 import ChangePassword from './components/auth/ChangePassword.tsx';
 import UserProfile from './components/user/profile.tsx';
+import Categories from './components/user/categories.tsx';
 import { ProtectedRoute } from './routes/ProtectedRoutes.tsx';
 import PublicRoute from './routes/PublicRoutes.tsx';
 import './App.css';
@@ -27,6 +28,7 @@ function App() {
                     <Route path="/task/:id" element={<ViewTask />} ></Route>
                     <Route path="/profile" element={<UserProfile />} ></Route>
                     <Route path="/change-password" element={<ChangePassword />} ></Route>
+                    <Route path="/task-categories" element={<Categories />} ></Route>
                 </Route>
             </Route>
 

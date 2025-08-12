@@ -3,7 +3,7 @@
 
 
 @font-face {
-  font-family: 'Outfit'; 
+  font-family: 'Outfit';
   src: url('assets/fonts/outfit.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
@@ -50,9 +50,9 @@
 
 
 @font-face {
-font-family: 'Avant Garde Demi Oblique BT';
-font-style: normal;
-src: url('assets/fonts/AVGARDDO_2.woff') format('woff');
+  font-family: 'Avant Garde Demi Oblique BT';
+  font-style: normal;
+  src: url('assets/fonts/AVGARDDO_2.woff') format('woff');
 }
 
 @font-face {
@@ -166,6 +166,10 @@ src: url('assets/fonts/AVGARDDO_2.woff') format('woff');
   font-family: var(--font-wise-inter);
 }
 
-*{
+* {
   box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
 }

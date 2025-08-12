@@ -267,4 +267,18 @@ class AuthService
             return false;
         }
     }
+
+
+    public function updateProfile(int $userId, array $data): bool
+    {
+        $user = User::find($userId);
+
+        if (!$user) {
+            throw new \Exception('User not found');
+        }
+
+        $user->update($data);
+
+        return true;
+    }
 }

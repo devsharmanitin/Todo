@@ -91,8 +91,6 @@ function ViewTask() {
         }
     };
 
-    console.log("TaskData", TaskData);
-
     return (
         <GridContainer className="md:mt-0 ">
             <div className="bg-white md:p-4 rounded-3xl shadow-lg border border-gray-300 p-4">

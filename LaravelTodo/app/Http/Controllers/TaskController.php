@@ -217,14 +217,23 @@ class TaskController extends Controller
         }
     }
 
-    public function tasks() {
+    public function tasks(Request $request) {
         $user = Auth::user();
-        $tasks = $user->tasks()->load(['category', 'status', 'priority', 'assignedUsers']);
+        $query = $user->tasks();
+
+        if ($request->has('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        $tasks = $query->with(['status', 'priority', 'assignedUsers'])->get();
+
         return response()->json([
             'success' => true,
             'message' => 'tasks fetched successfully',
-            'user'    => $user,
-            'task'    => $task
+            'data'    => [
+                'user'  => $user,
+                'tasks' => $tasks
+            ],
         ]);
     }
 
@@ -259,11 +268,13 @@ class TaskController extends Controller
             })
             ->get();
 
+        // $todayTasks = Task::with(['status:title,id,color_code', 'priority:title,id,color_code'])
+        //     ->where('created_by', $user->id)
+        //     ->whereDate('start_date', '<=', $currentDate)
+        //     ->whereDate('due_date', '>=', $currentDate)
+        //     ->whereHas('status', fn($q) => $q->where('title', '!=', 'Completed'))
+        //     ->get();
         $todayTasks = Task::with(['status:title,id,color_code', 'priority:title,id,color_code'])
-            ->where('created_by', $user->id)
-            ->whereDate('start_date', '<=', $currentDate)
-            ->whereDate('due_date', '>=', $currentDate)
-            ->whereHas('status', fn($q) => $q->where('title', '!=', 'Completed'))
             ->get();
 
         $upcomingTasks = Task::where('created_by', $user->id)

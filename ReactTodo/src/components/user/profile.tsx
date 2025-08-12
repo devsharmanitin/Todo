@@ -2,65 +2,94 @@ import React from "react";
 
 import GridContainer from "../ui/gridcontainer";
 import Profile from "../../assets/images/profile.svg";
+import { useAuth } from "../../context/AuthContext";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
 const UserProfile: React.FC = () => {
+    const { user, authenticatedRequest } = useAuth();
 
-    const handleFormSubmission = (e: React.FormEvent) => {
+    const [formData, setFormData] = useState({
+        name: user?.name || "",
+        email: user?.email || "",
+        username: user?.username || "",
+        phone: user?.phone || "",
+        address: user?.address || "",
+        city: user?.city || "",
+        state: user?.state || "",
+        country: user?.country || ""
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            [e.target.id]: e.target.value
+        });
+    };
+
+    const handleFormSubmission = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle form submission logic here
-        console.log("Form submitted");
-    }
-    
+
+        try {
+            const response = await authenticatedRequest("/update-profile", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.success) {
+                console.log(response);
+                toast.success("Profile updated successfully");
+            } else {
+                toast.error(response.message || "Failed to update profile");
+            }
+        } catch (error) {
+            console.log("error profile");
+            toast.error(error instanceof Error ? error.message : "An error occurred");
+        }
+    };
+
     return (
         <GridContainer className="md:mt-0 grid md:grid-cols-1">
             <div className="bg-white md:p-4 rounded-3xl shadow-lg border border-gray-300 p-4">
-                <div className="flex justify-between items-center mb-4 font-demi">
-                    <h2 className="relative text-2xl font-semibold text-gray-800 before:absolute before:bottom-0 before:w-20 before:h-[3px] before:bg-red-500 before:content-['']">Account Information</h2>
-                </div>
-                <div className="space-y-4">
-                    <div className="flex justify-start items-center space-x-3 mb-6">
-                        <div className="w-24 h-24 rounded-full bg-white overflow-hidden">
-                            <img className="w-full h-full object-cover" alt="Profile" src={Profile} />
-                        </div>
-                        <div className="text-normal text-start font-outfit font-poppins text-bold text-xl">
-                            <h2 className="font-semibold text-gray-900">Sundar Gurung</h2>
-                            <p className="text-red-500 text-sm">sundargurung580@gmail.com</p>
-                        </div>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4 font-demi">Account Information</h2>
+
+                <div className="flex items-center space-x-3 mb-6 font-poppins">
+                    <div className="w-24 h-24 rounded-full overflow-hidden">
+                        <img className="w-full h-full object-cover" alt="Profile" src={Profile} />
+                    </div>
+                    <div>
+                        <h2 className="font-semibold text-gray-900">{formData.name}</h2>
+                        <p className="text-red-500 text-sm">{formData.email}</p>
                     </div>
                 </div>
-                <div className="mt-10 rounded-lg border border-gray-300 p-4 font-outfit">
-                    <div className="space-y-4">
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="firstname" className="text-gray-700">First Name</label>
-                            <input type="text" id="firstname" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
+
+                <form onSubmit={handleFormSubmission} className="space-y-4">
+                    {["name", "username", "email", "phone", "address", "city", "state", "country"].map((field) => (
+                        <div key={field}>
+                            <label htmlFor={field} className="text-gray-700 capitalize font-poppins">
+                                {field.replace("_", " ")}
+                            </label>
+                            <input
+                                type={field === "email" ? "email" : "text"}
+                                id={field}
+                                value={(formData as any)[field]}
+                                onChange={handleChange}
+                                disabled={field === "username" ? true : false}
+                                className="border border-gray-300 rounded-lg p-2 w-full text-gray-700 font-inter"
+                            />
                         </div>
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="lastname" className="text-gray-700">Last Name</label>
-                            <input type="text" id="lastname" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
-                        </div>
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="email" className="text-gray-700">Email Address</label>
-                            <input type="email" id="email" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
-                        </div>
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="number" className="text-gray-700">Contact Number</label>
-                            <input type="password" id="number" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
-                        </div>
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="position" className="text-gray-700">Position</label>
-                            <input type="password" id="position" className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-red-500" />
-                        </div>
-                        <div className="flex flex-col space-y-2">
-                            <button onClick={(e) => handleFormSubmission(e)} className='w-max bg-red-500 text-gray-100 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-drafting-compass-icon lucide-drafting-compass"><path d="m12.99 6.74 1.93 3.44"/><path d="M19.136 12a10 10 0 0 1-14.271 0"/><path d="m21 21-2.16-3.84"/><path d="m3 21 8.02-14.26"/><circle cx="12" cy="5" r="2"/></svg>
-                                <span className='text-xs md:text-sm'>Update Information</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                    ))}
+
+                    <button type="submit" className="bg-red-500 text-white px-4 py-2 rounded-lg">
+                        Update Information
+                    </button>
+                </form>
             </div>
-        </GridContainer >
-    )
-}
+        </GridContainer>
+    );
+};
 
 export default UserProfile;

@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
                                     />
                                 </div>
                                 <div className="text-normal text-center mt-20 font-outfit">
-                                    <h2 className="font-semibold text-white">{user.username}</h2>
+                                    <h2 className="font-semibold text-white font-inter">{user.username}</h2>
                                     <p className="text-red-100 text-sm">{user.email}</p>
                                 </div>
                             </div>
