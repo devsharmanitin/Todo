@@ -29,7 +29,6 @@ const Sidebar: React.FC<SidebarProps> = ({ setSidebarOpen }) => { // Destructure
     const location = useLocation(); // Loading state for fetching user data
 
     const { user, logout } = useAuth();
-    console.log("user", user);
 
     const handleLogout = async (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();

@@ -48,17 +48,23 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
         Route::group(['prefix' => 'categories'], function () {
             Route::get('/', [CommonController::class, 'categories']);
-            Route::get('create', [TaskController::class, 'storeCategory']);
+            Route::post('create', [CommonController::class, 'storeCategory']);
+            Route::post('update/{id}', [CommonController::class, 'updateCategory']);
+            Route::post('delete/{id}', [CommonController::class, 'deleteCategory']);
         });
 
         Route::group(['prefix' => 'priorities'], function () {
-            Route::get('/', [CommonController::class, 'categories']);
-            Route::get('create', [TaskController::class, 'storePriority']);
+            Route::get('/', [CommonController::class, 'priorities']);
+            Route::post('create', [CommonController::class, 'storePriority']);
+            Route::post('update/{id}', [CommonController::class, 'updatePriority']);
+            Route::post('delete/{id}', [CommonController::class, 'deletePriority']);
         });
 
         Route::group(['prefix' => 'statuses'], function () {
             Route::get('/', [CommonController::class, 'statuses']);
-            Route::get('create', [TaskController::class, 'storeStatus']);
+            Route::post('create', [CommonController::class, 'storeStatus']);
+            Route::post('update/{id}', [CommonController::class, 'updateStatus']);
+            Route::post('delete/{id}', [CommonController::class, 'deleteStatus']);
         });
     });
 });

@@ -363,7 +363,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
             const response = await apiService.getUser();
-            console.log("Res:- ", response);
 
             // Calculate token expiry from response
             const tokenExpiry = Date.now() + (response.data.expires_in * 1000);
