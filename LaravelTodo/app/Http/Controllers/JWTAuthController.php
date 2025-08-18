@@ -20,6 +20,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use App\Http\Middleware\JwtMiddleware;
+use Illuminate\Support\Facades\Auth;
 
 
 class JWTAuthController extends Controller
@@ -178,6 +179,27 @@ class JWTAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve user data',
+            ], 500);
+        }
+    }
+
+    public function getAllUsers(): JsonResponse
+    {
+        try {
+            $users = User::where('id', '!=', Auth::id())
+            ->whereDoesntHave('roles', function ($query) {
+                $query->whereIn('name', ['admin', 'manager']);
+            })
+            ->get();
+            return response()->json([
+                'success' => true,
+                'data' => UserResource::collection($users)
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Get all users error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve users',
             ], 500);
         }
     }

@@ -29,6 +29,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware([JwtMiddleware::class])->group(function () {
     // User management - keep these for backward compatibility
     Route::get('/user', [JWTAuthController::class, 'getUser']);
+    Route::get('/users', [JWTAuthController::class, 'getAllUsers']);
     Route::post('/logout', [JWTAuthController::class, 'logout']);
     Route::post('/change-password', [JWTAuthController::class, 'changePassword']);
     Route::post('/update-profile', [JWTAuthController::class, 'UpdateProfile']);
