@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import SearchForm from '../forms/searchform';
 
 // 1. Update the props interface to accept 'setSidebarOpen'
 interface HeaderProps {
@@ -34,10 +35,7 @@ const Header: React.FC<HeaderProps> = ({ setSidebarOpen }) => {
                 </a>
 
                 <div className="flex-1 flex items-center justify-center">
-                    <div className="relative w-full md:w-auto">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="lucide lucide-search w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-                        <input type="text" className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent" placeholder="search your task here.." />
-                    </div>
+                    <SearchForm></SearchForm>
                 </div>
 
                 <div className="flex items-center space-x-2 md:space-x-4">

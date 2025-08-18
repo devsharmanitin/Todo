@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import Party from '../../assets/images/party.svg';
+import Modal from './Modal';
+import EditTaskForm from '../forms/EditTaskForm';
 
 interface TaskCardProps {
     id: number;
@@ -51,10 +53,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
     className = '',
 }) => {
 
+    const [showMetaBox, setShowMetaBox] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-
+    const handleEditModal = (e: React.MouseEvent) => {
+       setIsEditModalOpen(true);
+    }
+    
     return (
-        <div className={`border border-gray-200 rounded-lg py-4 px-3 relative font-poppins ${className}`} >
+        <>
+            <div className={`border border-gray-200 rounded-lg py-4 px-3 relative font-poppins mb-5 ${className}`} >
             <div className="flex items-center justify-between">
                 {/* Circle */}
                 <div
@@ -63,7 +71,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 ></div>
 
                 {/* Ellipsis Icon */}
-                <div className="w-5 h-5 text-gray-500 absolute right-5">
+                <div className="w-5 h-5 text-gray-500 absolute right-5 z-20 cursor-pointer" 
+                    onClick={(e) => {
+                        e.preventDefault(); 
+                        e.stopPropagation();   
+                        setShowMetaBox(!showMetaBox);
+                    }}
+                >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
@@ -80,6 +94,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         <circle cx="19" cy="12" r="1" />
                         <circle cx="5" cy="12" r="1" />
                     </svg>
+                    <div className={`absolute right-5 top-0 mt-2 w-48 bg-white shadow-lg z-10 border border-gray-300 rounded-lg group-hover:block ${showMetaBox === true ? 'block' : 'hidden'}`}>
+                        <ul className="py-1">
+                            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={handleEditModal}>Edit</li>
+                            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Delete</li>
+                            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">View Details</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -89,11 +110,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     <p className="text-gray-500 text-sm">{description}</p>
                 </div>
                 {image && (
-                    <div className="w-15 h-15 md:w-20 md:w-20 rounded-lg mt-2">
+                    <div className="w-15 h-15 md:w-15 md:w-15 rounded-lg mt-2">
                         <img
                             src={'http://localhost:8000/storage/' + image}
                             alt="task"
-                            className="w-full rounded-lg object-cover"
+                            className="rounded-lg object-cover"
                             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => { //  Explicitly define the event type
                                 (e.target as HTMLImageElement).onerror = null; // Type assertion
                                 (e.target as HTMLImageElement).src = Party; // Type assertion
@@ -119,6 +140,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 )}
             </div>
         </div>
+
+                {
+                    isEditModalOpen && (
+                        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Task">
+                            <EditTaskForm id={id}/>
+                        </Modal>
+                    )
+                }
+            
+        </>
+        
     );
 };
 

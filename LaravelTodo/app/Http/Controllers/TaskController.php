@@ -25,8 +25,8 @@ class TaskController extends Controller
             'start_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:start_date',
             'is_vital' => 'sometimes|boolean',
-            'image' => 'sometimes|array',
-            'image.*' => 'image|max:2048',
+            'image'   => 'nullable|array',
+            'image.*' => 'file|image|max:2048',
             'assigned_users' => 'nullable|array',
             'assigned_users.*' => 'exists:users,id',
         ];
@@ -221,6 +221,13 @@ class TaskController extends Controller
         $user = Auth::user();
         $query = $user->tasks();
 
+        if ($request->has('query')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->query('query') . '%')
+                ->orWhere('description', 'like', '%' . $request->query('query') . '%');
+            });
+        }
+
         if ($request->has('category')) {
             $query->where('category_id', $request->category);
         }
@@ -282,7 +289,8 @@ class TaskController extends Controller
             ->whereHas('status', fn($query) => $query->where('title', '!=', 'Completed'))
             ->get();
 
-        $completedTasks = Task::where('created_by', $user->id)
+        $completedTasks = Task::with(['status:title,id,color_code', 'priority:title,id,color_code'])
+            ->where('created_by', $user->id)
             ->whereHas('status', fn($query) => $query->where('title', '=', 'Completed'))
             ->get();
 

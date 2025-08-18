@@ -1,4 +1,4 @@
-import GridContainer from "../../ui/gridcontainer";
+import GridContainer from "../../ui/GridContainer";
 import Party from "../../../assets/images/party.svg";
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';

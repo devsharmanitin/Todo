@@ -2,13 +2,13 @@ import toast, { Toaster } from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 
 // Import your assets and components
-import Lucy from '../../../assets/images/lucy.svg'; // Ensure this path is correct
-import Party from '../../../assets/images/party.svg'; // Ensure this path is correct
-import { ProgressChart } from '../../progress/Chart.tsx'; // Ensure this path is correct
-import Modal from '../../ui/modal.tsx'; // Ensure this path is correct
-import TaskCard from '../../ui/card.tsx'; // Ensure this path is correct
-import GridContainer from '../../ui/gridcontainer.tsx'; // Ensure this path is correct
-import DragDropUploader from '../../ui/dragdropuploader.tsx';
+import Lucy from '../../../assets/images/lucy.svg'; 
+import Party from '../../../assets/images/party.svg'; 
+import { ProgressChart } from '../../progress/Chart.tsx'; 
+import Modal from '../../ui/Modal.tsx'; 
+import TaskCard from '../../ui/Card.tsx'; 
+import GridContainer from '../../ui/GridContainer.tsx'; 
+import DragDropUploader from '../../ui/DragDropUploader.tsx';
 import TruncateWords from '../../../services/helper.tsx';
 import { useAuth } from '../../../context/AuthContext.tsx';
 import { Link } from 'react-router-dom';
@@ -152,7 +152,7 @@ function Home() {
     const handleTaskSubmission = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!title || !date || !description || !selectedPriority || !image) {
+        if (!title || !date || !description || !selectedPriority ) {
             return toast.error("All fields are required");
         }
 
@@ -170,10 +170,12 @@ function Home() {
         // For image input (handle single or multiple files)
         if (Array.isArray(image)) {
             image.forEach((img: File) => {
-                formData.append('image[]', img);
+                if (img instanceof File) {
+                    formData.append('image[]', img);
+                }
             });
-        } else {
-            formData.append('image[]', image); // use `image[]` if your backend expects an array
+        } else if (image instanceof File) {
+            formData.append('image[]', image);
         }
 
         try {
@@ -220,8 +222,6 @@ function Home() {
             </div>
         );
     }
-
-    console.log("Dashboard Data", dashboardData);
 
 
     // Now that we know dashboardData is not null, we can safely access its properties
@@ -433,7 +433,7 @@ function Home() {
                         <div className="bg-white p-6 rounded-lg shadow-md">
                             <div className="flex justify-between items-center mb-4 font-demi">
                                 <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                                    <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-green-500">
                                         <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard-check-icon lucide-clipboard-check text-red-500"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="m9 14 2 2 4-4" /></svg>
                                     </div>
                                     <span className="text-red-500">Completed Tasks</span>
@@ -444,7 +444,7 @@ function Home() {
                                     <div key={task.id} className="border border-gray-200 rounded-lg py-5 px-4 relative font-poppins">
                                         <div className="flex items-center justify-between">
                                             {/* Circle */}
-                                            <div className={`w-5 h-5 border-2 border-${task.status_color}-500 rounded-full mt-1 flex-shrink-0 absolute left-5 top-4`}></div>
+                                            <div className={`w-5 h-5 border-2 border-green-500 rounded-full mt-1 flex-shrink-0 absolute left-5 top-4`}></div>
                                             <div className="w-5 h-5 text-gray-500 absolute right-5"><svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ellipsis-icon lucide-ellipsis"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg></div>
                                         </div>
                                         <div className="flex items-center space-x-4 px-8">
@@ -459,8 +459,8 @@ function Home() {
                                             )}
                                         </div>
                                         <div className="flex flex-col justify-between space-y-3 mt-3 px-8">
-                                            <p className='text-xs text-gray-500'>Status: <span className={`text-${task.status_color}-400`}>{task.status.title}</span></p>
-                                            <p className='text-xs text-gray-500'>Completed: <span className='text-gray-400'>{task.completed_at || 'N/A'}</span></p>
+                                            <p className='text-xs text-gray-500'>Status: <span className={`text-green-400`}>{task.status?.title}</span></p>
+                                            <p className='text-xs text-gray-500'>Completed: <span className='text-red-400'>{task.completed_at || '1 Minute Ago'}</span></p>
                                         </div>
                                     </div>
                                 ))}

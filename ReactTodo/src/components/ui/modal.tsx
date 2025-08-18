@@ -14,6 +14,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
         return null;
     }
 
+    console.log("Modal is open");
     return (
         <>
 

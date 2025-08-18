@@ -1,6 +1,6 @@
 import React from "react";
 
-import GridContainer from "../ui/gridcontainer";
+import GridContainer from "../ui/GridContainer";
 import Profile from "../../assets/images/profile.svg";
 
 const ChangePassword: React.FC = () => {
