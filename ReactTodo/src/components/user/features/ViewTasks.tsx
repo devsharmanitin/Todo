@@ -1,10 +1,10 @@
-import GridContainer from "../../ui/GridContainer";
+import GridContainer from "../../ui/gridcontainer";
 import Party from "../../../assets/images/party.svg";
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from "../../../context/AuthContext";
 import toast, { Toaster } from 'react-hot-toast';
-import Modal from "../../ui/Modal";
+import Modal from "../../ui/modal";
 import Lucy from "../../../assets/images/lucy.svg";
 
 
@@ -26,6 +26,13 @@ interface CategoryProps {
     color_code?: string
 }
 
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    image: string | null;
+    // Add other user properties if needed
+}
 
 interface ITask {
     id: number;
@@ -48,6 +55,7 @@ function ViewTask() {
     const { id } = useParams();
     const [TaskData, setTaskData] = useState<ITask | null>(null);
     const [users, setUsers] = useState<any[]>([]);
+    const [searchResults, setSearchResults] = useState<User[]>([]);
 
     useEffect(() => {
         const fetchtaskData = async () => {
@@ -115,20 +123,75 @@ function ViewTask() {
     };
 
     const handlePermissionChange = (userId: number, permission: string, isChecked: boolean) => {
-  setUsers((prevUsers) =>
-    prevUsers.map((u) =>
-      u.id === userId
-        ? {
-            ...u,
-            permissions: isChecked
-              ? [...(u.permissions || []), permission] // add permission
-              : (u.permissions || []).filter((p: any) => p !== permission), // remove permission
-          }
-        : u
-    )
-  );
-};
+        setUsers((prevUsers) =>
+            prevUsers.map((u) =>
+                u.id === userId
+                    ? {
+                        ...u,
+                        permissions: isChecked
+                            ? [...(u.permissions || []), permission] // add permission
+                            : (u.permissions || []).filter((p: any) => p !== permission), // remove permission
+                    }
+                    : u
+            )
+        );
+    };
     console.log("users", users);
+
+    const handleMemberInvite = async (userId: number) => {
+        const user = users.find((u) => u.id === userId);
+        if (!user) return;
+
+        try {
+            const response = await authenticatedRequest(`/tasks/${id}/invite`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    task_id: id,
+                    user_id: user.id,
+                    permissions: user.permissions || [], // array: ["can-edit", "can-delete"]
+                }),
+            });
+
+            if (response.success) {
+                toast.success(`Invite sent to ${user.name}`);
+            } else {
+                toast.error(response?.message || "Failed to send invite");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Error sending invite");
+        }
+    };
+
+    const handleMemberUser = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const email = e.target.value.trim();
+
+        if (email.length < 3) {
+            setSearchResults([]);
+            return;
+        }
+
+        // filter your global user list (say allUsers)
+        const matches = users.filter((user) =>
+            user.email.toLowerCase().includes(email.toLowerCase())
+        );
+
+        setSearchResults(matches);
+    };
+
+    // when user clicks from dropdown
+    const handleSelectUser = (selectedUser: any) => {
+        // check if already in users
+        const alreadyExists = users.some((u) => u.id === selectedUser.id);
+
+        if (!alreadyExists) {
+            setUsers((prev) => [...prev, selectedUser]);
+        }
+
+        // clear search results after selection
+        setSearchResults([]);
+    };
 
     return (
         <GridContainer className="md:mt-0 ">
@@ -169,64 +232,88 @@ function ViewTask() {
                 </div>
             </div>
             {/* Invitation Modal */}
-            
-                        {isOpenModal && (
-                            <Modal isOpen={isOpenModal} onClose={() => setIsOpenModal(false)} title="Send an Invite to a New Member">
-                                <div className="space-y-4">
-                                    <h3 className="text-xl">Email</h3>
-                                    <div className="flex items-center md:space-x-4 justify-start flex md:flex-row flex-col items-center space-x-4">
-                                        <input type="text" placeholder="Enter email address" className="w-full p-2 border border-gray-300 rounded-lg" />
-                                        <button className="bg-red-500 text-white px-4 py-2 w-max rounded text-nowrap" >Send Invite</button>
+
+            {isOpenModal && (
+                <Modal isOpen={isOpenModal} onClose={() => setIsOpenModal(false)} title="Send an Invite to a New Member">
+                    <div className="space-y-4">
+                        <h3 className="text-xl">Email</h3>
+                        <div className="flex items-center md:space-x-4 justify-start flex md:flex-row flex-col items-center space-x-4 relative">
+                            <input type="text" id="invite-member" onChange={handleMemberUser} placeholder="Enter email address" className="w-full p-2 border border-gray-300 rounded-lg" />
+                            {searchResults.length > 0 && (
+                                <ul className="absolute bg-white border mt-20 border-gray-300 rounded-lg w-full md:w-64 shadow-lg max-h-60 overflow-y-auto z-10">
+                                    {searchResults.map((user) => (
+
+                                        <li
+                                            key={user.id}
+                                            data-id={user.id}
+                                            onClick={() => handleSelectUser(user)}
+                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                        >
+                                            {user.name} ({user.email})
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                        <h3 className="text-xl">Members</h3>
+                        <ul className="space-y-4">
+                            {users.map((user) => (
+                                <li key={user.id}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-5">
+                                            <img
+                                                className="w-10 h-10 border border-red-500 rounded-full object-cover"
+                                                src={user.image || Lucy}
+                                                alt={`${user.name} Avatar`}
+                                            />
+                                            <div className="flex flex-col">
+                                                <h3>{user.name}</h3>
+                                                <p>{user.email}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Permissions */}
+                                        <div className="flex space-x-4">
+                                            <label className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={user.permissions?.includes("can-edit")}
+                                                    onChange={(e) =>
+                                                        handlePermissionChange(user.id, "can-edit", e.target.checked)
+                                                    }
+                                                    className="w-4 h-4 text-red-600 border-gray-300 rounded"
+                                                />
+                                                <span className="text-sm">Can Edit</span>
+                                            </label>
+
+                                            <label className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={user.permissions?.includes("can-delete")}
+                                                    onChange={(e) =>
+                                                        handlePermissionChange(user.id, "can-delete", e.target.checked)
+                                                    }
+                                                    className="w-4 h-4 text-red-600 border-gray-300 rounded"
+                                                />
+                                                <span className="text-sm">Can Delete</span>
+                                            </label>
+                                        </div>
+
+                                        <button
+                                            className="bg-red-500 text-white px-4 py-2 w-max rounded text-nowrap"
+                                            onClick={() => handleMemberInvite(user.id)}
+                                        >
+                                            Send Invite
+                                        </button>
                                     </div>
-                                    <h3 className="text-xl">Members</h3>
-                                    <ul className="space-y-4">
-                                        {users.map((user) => (
-  <li key={user.id}>
-    <div className="flex items-center justify-between">
-      <div className="flex items-center space-x-5">
-        <img
-          className="w-10 h-10 border border-red-500 rounded-full object-cover"
-          src={user.image || Lucy}
-          alt={`${user.name} Avatar`}
-        />
-        <div className="flex flex-col">
-          <h3>{user.name}</h3>
-          <p>{user.email}</p>
-        </div>
-      </div>
+                                </li>
+                            ))}
+                        </ul>
 
-      {/* Permissions as checkboxes */}
-      <div className="flex space-x-4">
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            value="can-edit"
-            checked={user.permissions?.includes("can-edit")}
-            onChange={(e) => handlePermissionChange(user.id, "can-edit", e.target.checked)}
-            className="w-4 h-4 text-red-600 border-gray-300 rounded"
-          />
-          <span className="text-sm">Can Edit</span>
-        </label>
-
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            value="can-delete"
-            checked={user.permissions?.includes("can-delete")}
-            onChange={(e) => handlePermissionChange(user.id, "can-delete", e.target.checked)}
-            className="w-4 h-4 text-red-600 border-gray-300 rounded"
-          />
-          <span className="text-sm">Can Delete</span>
-        </label>
-      </div>
-    </div>
-  </li>
-))}
-                                    </ul>
-                                </div>
-                            </Modal>
-                        )}
-                        {/* End Invitation Modal */}
+                    </div>
+                </Modal>
+            )}
+            {/* End Invitation Modal */}
         </GridContainer >
     )
 }

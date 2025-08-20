@@ -105,11 +105,12 @@ class Task extends Model
         return $this->belongsToMany(User::class, 'team_members');
     }
 
-    public function checkPermission(USER $user , string $permission) {
+    public function checkPermission(User $user, string $permission): bool
+    {
         return $this->assignedUsers()
-                ->where('user_id', $user->id)
-                ->where($permission, true)
-                ->exists(); 
+                    ->where('user_id', $user->id)
+                    ->wherePivot($permission, true) // ✅ fix: use wherePivot
+                    ->exists();
     }
 
 }

@@ -2,13 +2,13 @@ import toast, { Toaster } from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 
 // Import your assets and components
-import Lucy from '../../../assets/images/lucy.svg'; 
-import Party from '../../../assets/images/party.svg'; 
-import { ProgressChart } from '../../progress/Chart.tsx'; 
-import Modal from '../../ui/Modal.tsx'; 
-import TaskCard from '../../ui/Card.tsx'; 
-import GridContainer from '../../ui/GridContainer.tsx'; 
-import DragDropUploader from '../../ui/DragDropUploader.tsx';
+import Lucy from '../../../assets/images/lucy.svg';
+import Party from '../../../assets/images/party.svg';
+import { ProgressChart } from '../../progress/Chart.tsx';
+import Modal from '../../ui/modal.tsx';
+import TaskCard from '../../ui/card.tsx';
+import GridContainer from '../../ui/gridcontainer.tsx';
+import DragDropUploader from '../../ui/dragdropuploader.tsx';
 import TruncateWords from '../../../services/helper.tsx';
 import { useAuth } from '../../../context/AuthContext.tsx';
 import { Link } from 'react-router-dom';
@@ -105,12 +105,16 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [taskdata, setTaskData] = useState<ITaskData | null>(null);
     const [refreshTasks, setRefreshTasks] = useState(false);
-    const [getTaskData, getTasksData] = useState(false);
+    const [priorities, setPriorities] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [statuses, setStatuses] = useState<any[]>([]);
 
     const [title, setTitle] = useState("");
     const [description, handleDescriptionChange] = useState("");
     const [date, setDate] = useState("");
     const [selectedPriority, handlePriorityChange] = useState(0);
+    const [selectedCategory, handleCategoryChange] = useState(0);
+    const [selectedStatuses, handleStatusesChange] = useState(0);
     const [image, setImage] = useState<File | null>(null);
 
 
@@ -142,6 +146,60 @@ function Home() {
             }
         }
 
+        const fetchPriorities = async () => {
+            try {
+                const response = await authenticatedRequest('/priorities');
+                if (!response.success) {
+                    console.error("Error fetching priorities:", response.message);
+                    return;
+                }
+                setPriorities(response.data.priorities || []);
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error("Error fetching task details:", error.message);
+                } else {
+                    console.error(error);
+                }
+            }
+        }
+
+        const fetchCategories = async () => {
+            try {
+                const response = await authenticatedRequest('/categories');
+                if (!response.success) {
+                    console.error("Error fetching categories:", response.message);
+                    return;
+                }
+                setCategories(response.data.categories || []);
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error("Error fetching task details:", error.message);
+                } else {
+                    console.error(error);
+                }
+            }
+        }
+
+        const fetchStatues = async () => {
+            try {
+                const response = await authenticatedRequest('/statuses');
+                if (!response.success) {
+                    console.error("Error fetching statuses:", response.message);
+                    return;
+                }
+                setStatuses(response.data.statuses || []);
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error("Error fetching task details:", error.message);
+                } else {
+                    console.error(error);
+                }
+            }
+        }
+
+        fetchStatues();
+        fetchCategories();
+        fetchPriorities();
         fetchDashboardData();
         fetchTaskData();
 
@@ -152,7 +210,7 @@ function Home() {
     const handleTaskSubmission = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!title || !date || !description || !selectedPriority ) {
+        if (!title || !date || !description || !selectedPriority) {
             return toast.error("All fields are required");
         }
 
@@ -163,9 +221,12 @@ function Home() {
         const formData = new FormData();
         formData.append('title', title);
         formData.append('description', description);
-        formData.append('priority_id', String(selectedPriority));
         formData.append('due_date', date);
         formData.append('start_date', formatted_date);
+        if (selectedPriority) formData.append("priority_id", selectedPriority.toString());
+        if (selectedCategory) formData.append("category_id", selectedCategory.toString());
+        if (selectedStatuses) formData.append("status_id", selectedStatuses.toString());
+        if (image) formData.append("image", image);
 
         // For image input (handle single or multiple files)
         if (Array.isArray(image)) {
@@ -320,11 +381,11 @@ function Home() {
                                                 <legend className="text-gray-700 text-base mb-2">Priority</legend> {/* Corrected label for the group */}
                                                 <div className="flex flex-row space-x-4">
 
-                                                    {taskdata?.priorities?.map((priority) => {
+                                                    {priorities?.map((priority) => {
                                                         const isSelected = selectedPriority === priority.id;
 
                                                         return (
-                                                            <div key={priority.id} className="flex items-center space-x-2">
+                                                            <div key={`priority-${priority.id}`} className="flex items-center space-x-2">
                                                                 <input
                                                                     type="radio"
                                                                     id={`priority-${priority.id}`}
@@ -344,6 +405,78 @@ function Home() {
                                                                     className="text-gray-700 text-sm cursor-pointer"
                                                                 >
                                                                     {priority.title}
+                                                                </label>
+                                                            </div>
+                                                        );
+                                                    })}
+
+
+
+                                                </div>
+
+                                                <legend className="text-gray-700 text-base mb-2">Category</legend> {/* Corrected label for the group */}
+                                                <div className="flex flex-row space-x-4">
+
+                                                    {categories?.map((category) => {
+                                                        const isSelected = selectedCategory === category.id;
+
+                                                        return (
+                                                            <div key={`category-${category.id}`} className="flex items-center space-x-2">
+                                                                <input
+                                                                    type="radio"
+                                                                    id={`category-${category.id}`}
+                                                                    name="task-category"
+                                                                    value={category.id}
+                                                                    checked={isSelected}
+                                                                    onChange={(e) => handleCategoryChange(Number(e.target.value))}
+                                                                    className="appearance-none border border-gray-300 p-2 rounded-full focus:outline-none  focus:border-transparent cursor-pointer"
+                                                                    style={{
+                                                                        backgroundColor: isSelected
+                                                                            ? category.color_code || '#ef4444' // Tailwind's bg-red-500 fallback
+                                                                            : 'transparent',
+                                                                    }}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`category-${category.id}`}
+                                                                    className="text-gray-700 text-sm cursor-pointer"
+                                                                >
+                                                                    {category.title}
+                                                                </label>
+                                                            </div>
+                                                        );
+                                                    })}
+
+
+
+                                                </div>
+
+                                                <legend className="text-gray-700 text-base mb-2">Status</legend> {/* Corrected label for the group */}
+                                                <div className="flex flex-row space-x-4">
+
+                                                    {statuses?.map((status) => {
+                                                        const isSelected = selectedStatuses === status.id;
+
+                                                        return (
+                                                            <div key={`status-${status.id}`} className="flex items-center space-x-2">
+                                                                <input
+                                                                    type="radio"
+                                                                    id={`status-${status.id}`}
+                                                                    name="task-status"
+                                                                    value={status.id}
+                                                                    checked={isSelected}
+                                                                    onChange={(e) => handleStatusesChange(Number(e.target.value))}
+                                                                    className="appearance-none border border-gray-300 p-2 rounded-full focus:outline-none  focus:border-transparent cursor-pointer"
+                                                                    style={{
+                                                                        backgroundColor: isSelected
+                                                                            ? status.color_code || '#ef4444' // Tailwind's bg-red-500 fallback
+                                                                            : 'transparent',
+                                                                    }}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`status-${status.id}`}
+                                                                    className="text-gray-700 text-sm cursor-pointer"
+                                                                >
+                                                                    {status.title}
                                                                 </label>
                                                             </div>
                                                         );
@@ -391,20 +524,19 @@ function Home() {
                         </div>
                         <div className="space-y-4">
                             {dashboardData.today_tasks.map((task) => (
-                                <Link key={task.id} to={`/task/${task.id}`}>
-                                    <TaskCard
-                                        id={task.id}
-                                        title={task.title}
-                                        description={TruncateWords(task.description, 20)}
-                                        status={task.status} // ✅ full object { id, title }
-                                        statusColor={task.status.color_code}
-                                        priority={task.priority} // ✅ full object { id, title }
-                                        priorityColor={task.priority.color_code}
-                                        date={task.date}
-                                        image={task.image || Party}
-                                        circleColor={task.status_color}
-                                    />
-                                </Link>
+                                <TaskCard
+                                    key={task.id}
+                                    id={task.id}
+                                    title={task.title}
+                                    description={TruncateWords(task.description, 20)}
+                                    status={task.status} // ✅ full object { id, title }
+                                    statusColor={task.status.color_code}
+                                    priority={task.priority} // ✅ full object { id, title }
+                                    priorityColor={task.priority.color_code}
+                                    date={task.date}
+                                    image={task.image || Party}
+                                    circleColor={task.status_color}
+                                />
                             ))}
                         </div>
                     </div>

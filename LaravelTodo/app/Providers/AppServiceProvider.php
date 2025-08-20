@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use App\Models\User;   // ✅ correct
+use App\Models\Task; 
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,22 +20,22 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
+    
     public function boot(): void
     {
-        //
-        Gate::define('CAN_EDIT', function(USER $user, Task $task) {
+        Gate::define('CAN_EDIT', function (User $user, Task $task) {
             return $task->checkPermission($user, 'CAN_EDIT');
         });
 
-        Gate::define('CAN_VIEW', function(USER $user, TASK $task) {
+        Gate::define('CAN_VIEW', function (User $user, Task $task) {
             return $task->checkPermission($user, 'CAN_VIEW');
         });
 
-        Gate::define('CAN_DELETE', function(USer $user, TASK $task){
+        Gate::define('CAN_DELETE', function (User $user, Task $task) {
             return $task->checkPermission($user, 'CAN_DELETE');
         });
 
-        Gate::define('CAN_INVITE', function(USer $user, TASK $task){
+        Gate::define('CAN_INVITE', function (User $user, Task $task) {
             return $task->checkPermission($user, 'CAN_INVITE');
         });
     }

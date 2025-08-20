@@ -33,7 +33,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
                     </div>
 
                     {/* Body */}
-                    <div className="text-gray-700 mb-4 rounded-lg p-3 border border-gray-400 font-inter">
+                    <div className="text-gray-700 mb-4 rounded-lg p-3 border border-gray-400 font-inter overflow-y-auto flex-1">
                         {children}
                     </div>
 

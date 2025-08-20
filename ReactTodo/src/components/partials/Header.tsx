@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import SearchForm from '../forms/searchform';
+import SearchForm from '../forms/SearchForm';
 
 // 1. Update the props interface to accept 'setSidebarOpen'
 interface HeaderProps {

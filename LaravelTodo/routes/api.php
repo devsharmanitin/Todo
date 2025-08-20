@@ -37,13 +37,14 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     // Routes requiring active user status
     Route::middleware([UserActiveStatus::class])->group(function () {
         Route::get('/dashboard', [TaskController::class, 'dashboard']);
+        Route::post('/tasks/{id}/invite', [TaskController::class, 'inviteUser']);
 
         Route::prefix('tasks')->group(function () {
             Route::get('/', [TaskController::class, 'tasks']);
             Route::get('create', [TaskController::class, 'create']);
             Route::post('store', [TaskController::class, 'store']);
             Route::get('/{id}', [TaskController::class, 'view']);
-            Route::put('update/{id}', [TaskController::class, 'update']);
+            Route::post('update/{id}', [TaskController::class, 'update']);
             Route::delete('delete/{id}', [TaskController::class, 'destroy']);
         });
 

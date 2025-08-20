@@ -1,6 +1,6 @@
 import React from "react";
 
-import GridContainer from "../ui/GridContainer";
+import GridContainer from "../ui/gridcontainer";
 import Profile from "../../assets/images/profile.svg";
 
 const ChangePassword: React.FC = () => {
@@ -10,7 +10,7 @@ const ChangePassword: React.FC = () => {
         // Handle form submission logic here
         console.log("Form submitted");
     }
-    
+
     return (
         <GridContainer className="md:mt-0 grid md:grid-cols-1">
             <div className="bg-white md:p-4 rounded-3xl shadow-lg border border-gray-300 p-4">
@@ -44,7 +44,7 @@ const ChangePassword: React.FC = () => {
                         </div>
                         <div className="flex flex-col space-y-2">
                             <button onClick={(e) => handleFormSubmission(e)} className='w-max bg-red-500 text-gray-100 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2'>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-drafting-compass-icon lucide-drafting-compass"><path d="m12.99 6.74 1.93 3.44"/><path d="M19.136 12a10 10 0 0 1-14.271 0"/><path d="m21 21-2.16-3.84"/><path d="m3 21 8.02-14.26"/><circle cx="12" cy="5" r="2"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-drafting-compass-icon lucide-drafting-compass"><path d="m12.99 6.74 1.93 3.44" /><path d="M19.136 12a10 10 0 0 1-14.271 0" /><path d="m21 21-2.16-3.84" /><path d="m3 21 8.02-14.26" /><circle cx="12" cy="5" r="2" /></svg>
                                 <span className='text-xs md:text-sm'>Update Password</span>
                             </button>
                         </div>

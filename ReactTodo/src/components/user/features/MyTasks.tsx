@@ -1,5 +1,5 @@
-import GridContainer from "../../ui/GridContainer.tsx";
-import TaskCard from "../../ui/Card.tsx";
+import GridContainer from "../../ui/gridcontainer.tsx";
+import TaskCard from "../../ui/card.tsx";
 import Party from "../../../assets/images/party.svg";
 import { useAuth } from "../../../context/AuthContext";
 import { useEffect, useState } from "react";

@@ -11,10 +11,13 @@ use App\Models\TaskPriority;
 use App\Models\TaskStatus;
 use App\Models\User;
 use App\Models\Task;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TaskController extends Controller
 {
     //
+    use \Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
     private function validate( Request $request, $isUpdate = false) {
         $rules = [
             'title' => 'required|string|max:255',
@@ -22,7 +25,7 @@ class TaskController extends Controller
             'category_id' => 'nullable|exists:task_categories,id',
             'status_id' => 'nullable|exists:task_statuses,id',
             'priority_id' => 'required|exists:task_priorities,id',
-            'start_date' => 'required|date',
+            'start_date' => 'nullable|date',
             'due_date' => 'required|date|after_or_equal:start_date',
             'is_vital' => 'sometimes|boolean',
             'image'   => 'nullable|array',
@@ -88,7 +91,6 @@ class TaskController extends Controller
                 $data['image'] = $lastFile->store('tasks', 'public');
             }
 
-            $data['status'] = TaskStatus::where('title', 'Not Started')->value('id');
             $task = Task::create($data);
 
             $assigningUsers = collect($data['assigned_users'] ?? [])
@@ -232,7 +234,7 @@ class TaskController extends Controller
             $query->where('category_id', $request->category);
         }
 
-        $tasks = $query->with(['status', 'priority', 'assignedUsers'])->get();
+        $tasks = $query->with(['status', 'priority', 'category', 'assignedUsers'])->get();
 
         return response()->json([
             'success' => true,
@@ -246,8 +248,13 @@ class TaskController extends Controller
 
     public function view(Request $request, $id) {
         try {
-            $task = Task::find($id)
-                ->with(['status:id,title,color_code', 'priority:id,title,color_code'])->first();
+            $task = $task = Task::with([
+                'status:id,title,color_code',
+                'priority:id,title,color_code',
+                'category:id,title'
+            ])
+            ->find($id);
+                
             return response()->json([
                 'success'   => true,
                 'message'   => 'task fetched successfully',
@@ -339,6 +346,47 @@ class TaskController extends Controller
         ]);
     }
 
+
+    public function inviteUser(Request $request, $id) 
+    {
+        // Validate request
+        return response()->json([
+            'success' => true,
+            'message' => 'This endpoint is not implemented yet.',
+            'error_code' => 'NOT_IMPLEMENTED',
+            'data'  => $request->all()
+        ], 200);
+        $validated = Validator::validate($request->all(), [
+            'users' => 'required|array',
+            'users.*.id' => 'required|exists:users,id',
+            'users.*.permissions' => 'array',
+            'users.*.permissions.CAN_EDIT' => 'boolean',
+            'users.*.permissions.CAN_VIEW' => 'boolean',
+            'users.*.permissions.CAN_DELETE' => 'boolean',
+            'users.*.permissions.CAN_INVITE' => 'boolean',
+        ]);
+
+        // Find the task
+        $task = Task::findOrFail($id);
+
+        $syncData = [];
+        foreach ($validated['users'] as $user) {
+            $syncData[$user['id']] = [
+                'CAN_EDIT'   => $user['permissions']['CAN_EDIT']   ?? false,
+                'CAN_VIEW'   => $user['permissions']['CAN_VIEW']   ?? false,
+                'CAN_DELETE' => $user['permissions']['CAN_DELETE'] ?? false,
+                'CAN_INVITE' => $user['permissions']['CAN_INVITE'] ?? false,
+            ];
+        }
+
+        // Sync users with permissions into pivot table
+        $task->assignedUsers()->syncWithoutDetaching($syncData);
+
+        return response()->json([
+            'message' => 'Users invited successfully!',
+            'task' => $task->load('assignedUsers'),
+        ]);
+    }
 
 
     

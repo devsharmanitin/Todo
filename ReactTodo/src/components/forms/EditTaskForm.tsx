@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import DragDropUploader from '../ui/DragDropUploader';
+import DragDropUploader from '../ui/dragdropuploader';
 import { useAuth } from '../../context/AuthContext';
 
 interface EditTaskProps {
@@ -8,46 +8,87 @@ interface EditTaskProps {
 
 const EditTaskForm = ({ id }: EditTaskProps) => {
     const { authenticatedRequest } = useAuth();
-
-    const [TaskData, setTaskData] = useState<any>(null);
+    console.log("EDIT ID:- ", id);
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [date, setDate] = useState("");
     const [selectedPriority, setSelectedPriority] = useState<number | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+    const [selectedStatus, setSelectedStatus] = useState<number | null>(null);
     const [image, setImage] = useState<File | null>(null);
 
+    const [priorities, setPriorities] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [statuses, setStatuses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch lists
+    useEffect(() => {
+        const fetchOptions = async () => {
+            try {
+                const [priRes, catRes, staRes] = await Promise.all([
+                    authenticatedRequest("/priorities"),
+                    authenticatedRequest("/categories"),
+                    authenticatedRequest("/statuses"),
+                ]);
+
+                if (priRes.success) setPriorities(priRes.data.priorities || []);
+                if (catRes.success) setCategories(catRes.data.categories || []);
+                if (staRes.success) setStatuses(staRes.data.statuses || []);
+            } catch (err) {
+                console.error("Error fetching options:", err);
+            }
+        };
+
+        fetchOptions();
+    }, [authenticatedRequest]);
+
+    // Fetch task details
     useEffect(() => {
         const fetchTaskDetails = async () => {
             try {
-                const response = await authenticatedRequest('/tasks/' + id, {
+                setLoading(true);
+                const response = await authenticatedRequest("/tasks/" + id, {
                     method: "GET",
                 });
+
                 if (!response.success) {
                     console.log("Error:", response.message);
                     return;
                 }
 
                 const task = response.data.task;
-                setTaskData(task);
+                console.log("Fetched task details:", task);
 
-                // pre-fill form state
                 setTitle(task.title || "");
                 setDescription(task.description || "");
-                setDate(task.due_date ? new Date(task.due_date).toISOString().split("T")[0] : "");
-                setSelectedPriority(task.priority?.id || null);
+                setDate(
+                    task.due_date
+                        ? new Date(task.due_date).toISOString().split("T")[0]
+                        : ""
+                );
+                setSelectedPriority(task.priority?.id ?? null);
+                setSelectedCategory(task.category?.id ?? null);
+                setSelectedStatus(task.status?.id ?? null);
+
+                // ✅ Direct log from API values
+                console.log("Task details set:", {
+                    Cat: task.category?.id,
+                    pri: task.priority?.id,
+                    sta: task.status?.id,
+                });
             } catch (error) {
-                if (error instanceof Error) {
-                    console.error("Error fetching task details:", error.message);
-                } else {
-                    console.error(error);
-                }
+                console.error("Error fetching task details:", error);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchTaskDetails();
     }, [id, authenticatedRequest]);
 
+    // Submission
     const handleTaskSubmission = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -56,14 +97,22 @@ const EditTaskForm = ({ id }: EditTaskProps) => {
             formData.append("title", title);
             formData.append("description", description);
             formData.append("due_date", date);
-            if (selectedPriority) {
-                formData.append("priority_id", selectedPriority.toString());
-            }
-            if (image) {
-                formData.append("image", image);
-            }
 
-            const response = await authenticatedRequest('/tasks/update/' + id, {
+            if (selectedPriority)
+                formData.append("priority_id", selectedPriority.toString());
+            if (selectedCategory)
+                formData.append("category_id", selectedCategory.toString());
+            if (selectedStatus)
+                formData.append("status_id", selectedStatus.toString());
+            if (image) formData.append("image", image);
+
+            const response = await authenticatedRequest("/tasks/update/" + id, {
+                method: "POST",
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    // Do NOT set 'Content-Type': browser handles it when using FormData
+                },
                 body: formData,
             });
 
@@ -73,20 +122,20 @@ const EditTaskForm = ({ id }: EditTaskProps) => {
                 console.log("Task updated successfully!");
             }
         } catch (error) {
-            if (error instanceof Error) {
-                console.error("Error updating task:", error.message);
-            } else {
-                console.error(error);
-            }
+            console.error("Error updating task:", error);
         }
     };
 
+    if (loading) return <p>Loading task details...</p>;
+
     return (
         <form className="flex space-x-4" onSubmit={handleTaskSubmission}>
-            <div className="space-y-4 flex-1">
+            <div className="space-y-4 flex-1 overflow-y-auto max-h-[80vh] pr-2">
                 {/* Title */}
                 <div className="flex flex-col space-y-2">
-                    <label htmlFor="title" className="text-gray-700">Title</label>
+                    <label htmlFor="title" className="text-gray-700">
+                        Title
+                    </label>
                     <input
                         type="text"
                         value={title}
@@ -98,7 +147,9 @@ const EditTaskForm = ({ id }: EditTaskProps) => {
 
                 {/* Date */}
                 <div className="flex flex-col space-y-2">
-                    <label htmlFor="date" className="text-gray-700">Date</label>
+                    <label htmlFor="date" className="text-gray-700">
+                        Date
+                    </label>
                     <input
                         type="date"
                         value={date}
@@ -109,35 +160,115 @@ const EditTaskForm = ({ id }: EditTaskProps) => {
                 </div>
 
                 {/* Priority */}
-                <legend className="text-gray-700 text-base mb-2">Priority</legend>
-                <div className="flex flex-row space-x-4">
-                    {TaskData?.priority && (
-                        <div key={TaskData.priority.id} className="flex items-center space-x-2">
-                            <input
-                                type="radio"
-                                id={`priority-${TaskData.priority.id}`}
-                                name="task-priority"
-                                value={TaskData.priority.id}
-                                checked={selectedPriority === TaskData.priority.id}
-                                onChange={() => setSelectedPriority(TaskData.priority.id)}
-                                className="appearance-none border border-gray-300 p-2 rounded-full focus:outline-none focus:border-transparent cursor-pointer"
-                                style={{
-                                    backgroundColor: TaskData.priority.color_code,
-                                }}
-                            />
+                <fieldset>
+                    <legend className="text-gray-700 text-base mb-2">Priority</legend>
+                    <div className="flex flex-row flex-wrap gap-4">
+                        {priorities.map((priority) => (
                             <label
-                                htmlFor={`priority-${TaskData.priority.id}`}
-                                className="text-gray-700 text-sm cursor-pointer"
+                                key={priority.id}
+                                htmlFor={`priority-${priority.id}`}
+                                className="flex items-center space-x-2 cursor-pointer"
                             >
-                                {TaskData.priority.title}
+                                <input
+                                    type="radio"
+                                    id={`priority-${priority.id}`}
+                                    name="task-priority"
+                                    value={priority.id}
+                                    checked={selectedPriority === priority.id}
+                                    onChange={() => setSelectedPriority(priority.id)}
+                                    className="hidden"
+                                />
+                                <span
+                                    className={`w-4 h-4 rounded-full border`}
+                                    style={{
+                                        backgroundColor:
+                                            selectedPriority === priority.id
+                                                ? priority.color_code || "#ef4444"
+                                                : "transparent",
+                                        borderColor: priority.color_code || "#ef4444",
+                                    }}
+                                />
+                                <span className="text-gray-700 text-sm">{priority.title}</span>
                             </label>
-                        </div>
-                    )}
-                </div>
+                        ))}
+                    </div>
+                </fieldset>
+
+                {/* Category */}
+                <fieldset>
+                    <legend className="text-gray-700 text-base mb-2">Category</legend>
+                    <div className="flex flex-row flex-wrap gap-4">
+                        {categories.map((category) => (
+                            <label
+                                key={category.id}
+                                htmlFor={`category-${category.id}`}
+                                className="flex items-center space-x-2 cursor-pointer"
+                            >
+                                <input
+                                    type="radio"
+                                    id={`category-${category.id}`}
+                                    name="task-category"
+                                    value={category.id}
+                                    checked={selectedCategory === category.id}
+                                    onChange={() => setSelectedCategory(category.id)}
+                                    className="hidden"
+                                />
+                                <span
+                                    className={`w-4 h-4 rounded-full border`}
+                                    style={{
+                                        backgroundColor:
+                                            selectedCategory === category.id
+                                                ? category.color_code || "#3b82f6"
+                                                : "transparent",
+                                        borderColor: category.color_code || "#3b82f6",
+                                    }}
+                                />
+                                <span className="text-gray-700 text-sm">{category.title}</span>
+                            </label>
+                        ))}
+                    </div>
+                </fieldset>
+
+                {/* Status */}
+                <fieldset>
+                    <legend className="text-gray-700 text-base mb-2">Status</legend>
+                    <div className="flex flex-row flex-wrap gap-4">
+                        {statuses.map((status) => (
+                            <label
+                                key={status.id}
+                                htmlFor={`status-${status.id}`}
+                                className="flex items-center space-x-2 cursor-pointer"
+                            >
+                                <input
+                                    type="radio"
+                                    id={`status-${status.id}`}
+                                    name="task-status"
+                                    value={status.id}
+                                    checked={selectedStatus === status.id}
+                                    onChange={() => setSelectedStatus(status.id)}
+                                    className="hidden"
+                                />
+                                <span
+                                    className={`w-4 h-4 rounded-full border`}
+                                    style={{
+                                        backgroundColor:
+                                            selectedStatus === status.id
+                                                ? status.color_code || "#10b981"
+                                                : "transparent",
+                                        borderColor: status.color_code || "#10b981",
+                                    }}
+                                />
+                                <span className="text-gray-700 text-sm">{status.title}</span>
+                            </label>
+                        ))}
+                    </div>
+                </fieldset>
 
                 {/* Description */}
                 <div className="flex flex-col space-y-2">
-                    <label htmlFor="description" className="text-gray-700">Message</label>
+                    <label htmlFor="description" className="text-gray-700">
+                        Message
+                    </label>
                     <textarea
                         id="description"
                         value={description}
@@ -154,16 +285,6 @@ const EditTaskForm = ({ id }: EditTaskProps) => {
                         type="submit"
                         className="w-max bg-red-500 text-gray-100 px-2 py-1 md:px-4 md:py-2 border border-red-200 rounded-lg flex items-center space-x-2"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                             className="lucide lucide-drafting-compass">
-                            <path d="m12.99 6.74 1.93 3.44" />
-                            <path d="M19.136 12a10 10 0 0 1-14.271 0" />
-                            <path d="m21 21-2.16-3.84" />
-                            <path d="m3 21 8.02-14.26" />
-                            <circle cx="12" cy="5" r="2" />
-                        </svg>
                         <span className="text-xs md:text-sm">Update Information</span>
                     </button>
                 </div>
@@ -173,9 +294,7 @@ const EditTaskForm = ({ id }: EditTaskProps) => {
             <div className="space-y-4">
                 <DragDropUploader
                     onFilesSelected={(files) => {
-                        if (files.length > 0) {
-                            setImage(files[0]); // only first file
-                        }
+                        if (files.length > 0) setImage(files[0]);
                     }}
                     width="200px"
                     height="200px"
