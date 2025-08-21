@@ -54,12 +54,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
     className = '',
 }) => {
 
+    const { user, hasSpecificPermission } = useAuth();
     const [showMetaBox, setShowMetaBox] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const handleEditModal = (e: React.MouseEvent) => {
         setIsEditModalOpen(true);
     }
+
+
 
     return (
         <>
@@ -97,8 +100,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         </svg>
                         <div className={`absolute right-5 top-0 mt-2 w-48 bg-white shadow-lg z-10 border border-gray-300 rounded-lg group-hover:block ${showMetaBox === true ? 'block' : 'hidden'}`}>
                             <ul className="py-1">
-                                <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={handleEditModal}>Edit</li>
-                                <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Delete</li>
+                                {
+                                    hasSpecificPermission(Number(id), "can_edit", user) && (
+                                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={handleEditModal}>Edit</li>
+                                    )
+                                }
+                                {
+                                    hasSpecificPermission(Number(id), "can_delete", user) && (
+                                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Delete</li>
+                                    )
+                                }
                                 <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">View Details</li>
                             </ul>
                         </div>

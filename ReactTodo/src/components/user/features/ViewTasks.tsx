@@ -8,6 +8,7 @@ import Modal from "../../ui/modal";
 import Lucy from "../../../assets/images/lucy.svg";
 
 
+
 interface PriorityProps {
     id: number,
     title: string,
@@ -47,9 +48,21 @@ interface ITask {
     completed_at?: string; // Optional, for completed tasks
 }
 
+interface TaskSpecificPermission {
+    task_id: number;
+    task_title: string;
+    permissions: {
+        can_view: boolean;
+        can_edit: boolean;
+        can_delete: boolean;
+        can_invite: boolean;
+    };
+}
+
+
 function ViewTask() {
     const navigate = useNavigate();
-    const { authenticatedRequest } = useAuth();
+    const { authenticatedRequest, hasSpecificPermission } = useAuth();
     const [isOpenModal, setIsOpenModal] = useState(false);
 
     const { id } = useParams();
@@ -66,6 +79,7 @@ function ViewTask() {
                     return;
                 }
                 setTaskData(response.data.task);
+                console.log("TaskData", response.data.task);
             } catch (error: unknown) {
                 if (error instanceof Error) {
                     toast.error(error.message);
@@ -96,6 +110,7 @@ function ViewTask() {
         fetchUser();
     }, [id]);
 
+
     const handleDelete = async (e: React.MouseEvent) => {
         e.preventDefault();
 
@@ -122,21 +137,57 @@ function ViewTask() {
         }
     };
 
-    const handlePermissionChange = (userId: number, permission: string, isChecked: boolean) => {
+    const handlePermissionChange = (
+        taskId: number,
+        userId: number,
+        permission: keyof TaskSpecificPermission["permissions"],
+        isChecked: boolean
+    ) => {
         setUsers((prevUsers) =>
-            prevUsers.map((u) =>
-                u.id === userId
-                    ? {
-                        ...u,
-                        permissions: isChecked
-                            ? [...(u.permissions || []), permission] // add permission
-                            : (u.permissions || []).filter((p: any) => p !== permission), // remove permission
+            prevUsers.map((u) => {
+                if (u.id !== userId) return u;
+
+                const updatedSpecific = [...(u.permissions?.specific || [])];
+                const existing = updatedSpecific.find((p) => p.task_id === taskId);
+
+
+                if (isChecked) {
+                    console.log("i check");
+                    if (existing) {
+                        existing.permissions[permission] = true;
+                    } else {
+                        console.log("i check");
+                        updatedSpecific.push({
+                            task_id: taskId,
+                            task_title: "", // optional
+                            permissions: {
+                                can_view: false,
+                                can_edit: false,
+                                can_delete: false,
+                                can_invite: false,
+                                [permission]: true, // set only the one checked
+                            },
+                        });
                     }
-                    : u
-            )
+                } else {
+                    if (existing) {
+                        existing.permissions[permission] = false;
+                    }
+                }
+
+
+
+                return {
+                    ...u,
+                    permissions: {
+                        ...u.permissions,
+                        specific: updatedSpecific,
+                    },
+                };
+
+            })
         );
     };
-    console.log("users", users);
 
     const handleMemberInvite = async (userId: number) => {
         const user = users.find((u) => u.id === userId);
@@ -145,11 +196,10 @@ function ViewTask() {
         try {
             const response = await authenticatedRequest(`/tasks/${id}/invite`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     task_id: id,
                     user_id: user.id,
-                    permissions: user.permissions || [], // array: ["can-edit", "can-delete"]
+                    permissions: user.permissions || [],
                 }),
             });
 
@@ -258,6 +308,7 @@ function ViewTask() {
                         <h3 className="text-xl">Members</h3>
                         <ul className="space-y-4">
                             {users.map((user) => (
+                                console.log("User Permissions", user.permissions),
                                 <li key={user.id}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-5">
@@ -277,11 +328,27 @@ function ViewTask() {
                                             <label className="flex items-center space-x-2">
                                                 <input
                                                     type="checkbox"
-                                                    checked={user.permissions?.includes("can-edit")}
+                                                    id={`can_view_${user.id}`}
+                                                    checked={hasSpecificPermission(Number(id), "can_view", user)}
                                                     onChange={(e) =>
-                                                        handlePermissionChange(user.id, "can-edit", e.target.checked)
+                                                        handlePermissionChange(Number(id), user.id, "can_view", e.target.checked)
                                                     }
                                                     className="w-4 h-4 text-red-600 border-gray-300 rounded"
+                                                    value="can_edit"
+                                                />
+                                                <span className="text-sm">Can View</span>
+                                            </label>
+
+                                            <label className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`can_view_${user.id}`}
+                                                    checked={hasSpecificPermission(Number(id), "can_edit", user)}
+                                                    onChange={(e) =>
+                                                        handlePermissionChange(Number(id), user.id, "can_edit", e.target.checked)
+                                                    }
+                                                    className="w-4 h-4 text-red-600 border-gray-300 rounded"
+                                                    value="can_edit"
                                                 />
                                                 <span className="text-sm">Can Edit</span>
                                             </label>
@@ -289,11 +356,13 @@ function ViewTask() {
                                             <label className="flex items-center space-x-2">
                                                 <input
                                                     type="checkbox"
-                                                    checked={user.permissions?.includes("can-delete")}
+                                                    id={`can_delete_${user.id}`}
+                                                    checked={hasSpecificPermission(Number(id), "can_delete", user)}
                                                     onChange={(e) =>
-                                                        handlePermissionChange(user.id, "can-delete", e.target.checked)
+                                                        handlePermissionChange(Number(id), user.id, "can_delete", e.target.checked)
                                                     }
                                                     className="w-4 h-4 text-red-600 border-gray-300 rounded"
+                                                    value="can_delete"
                                                 />
                                                 <span className="text-sm">Can Delete</span>
                                             </label>

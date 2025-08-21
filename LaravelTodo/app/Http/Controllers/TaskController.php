@@ -251,7 +251,8 @@ class TaskController extends Controller
             $task = $task = Task::with([
                 'status:id,title,color_code',
                 'priority:id,title,color_code',
-                'category:id,title'
+                'category:id,title',
+                'assignedUsers',
             ])
             ->find($id);
                 
@@ -281,22 +282,17 @@ class TaskController extends Controller
                 $query->whereIn('name', ['admin', 'manager']);
             })
             ->get();
-
-        // $todayTasks = Task::with(['status:title,id,color_code', 'priority:title,id,color_code'])
-        //     ->where('created_by', $user->id)
-        //     ->whereDate('start_date', '<=', $currentDate)
-        //     ->whereDate('due_date', '>=', $currentDate)
-        //     ->whereHas('status', fn($q) => $q->where('title', '!=', 'Completed'))
-        //     ->get();
-        $todayTasks = Task::with(['status:title,id,color_code', 'priority:title,id,color_code'])
+            
+        $todayTasks = $user->assignedTasks()->with(['status:title,id,color_code', 'priority:title,id,color_code'])
+            ->whereHas('status', fn($query) => $query->where('title', '!=', 'Completed'))
             ->get();
 
-        $upcomingTasks = Task::where('created_by', $user->id)
+        $upcomingTasks = $user->assignedTasks()->with(['status:title,id,color_code', 'priority:title,id,color_code'])
             ->whereDate('start_date', '>', $currentDate)
             ->whereHas('status', fn($query) => $query->where('title', '!=', 'Completed'))
             ->get();
 
-        $completedTasks = Task::with(['status:title,id,color_code', 'priority:title,id,color_code'])
+        $completedTasks = $user->assignedTasks()->with(['status:title,id,color_code', 'priority:title,id,color_code'])
             ->where('created_by', $user->id)
             ->whereHas('status', fn($query) => $query->where('title', '=', 'Completed'))
             ->get();
@@ -347,44 +343,48 @@ class TaskController extends Controller
     }
 
 
-    public function inviteUser(Request $request, $id) 
+    public function inviteUser(Request $request, $id)
     {
-        // Validate request
-        return response()->json([
-            'success' => true,
-            'message' => 'This endpoint is not implemented yet.',
-            'error_code' => 'NOT_IMPLEMENTED',
-            'data'  => $request->all()
-        ], 200);
-        $validated = Validator::validate($request->all(), [
-            'users' => 'required|array',
-            'users.*.id' => 'required|exists:users,id',
-            'users.*.permissions' => 'array',
-            'users.*.permissions.CAN_EDIT' => 'boolean',
-            'users.*.permissions.CAN_VIEW' => 'boolean',
-            'users.*.permissions.CAN_DELETE' => 'boolean',
-            'users.*.permissions.CAN_INVITE' => 'boolean',
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'permissions.global'   => 'array',
+            'permissions.specific' => 'array',
+            'permissions.specific.*.permissions.can_edit'   => 'boolean',
+            'permissions.specific.*.permissions.can_view'   => 'boolean',
+            'permissions.specific.*.permissions.can_delete' => 'boolean',
+            'permissions.specific.*.permissions.can_invite' => 'boolean',
         ]);
 
-        // Find the task
         $task = Task::findOrFail($id);
 
-        $syncData = [];
-        foreach ($validated['users'] as $user) {
-            $syncData[$user['id']] = [
-                'CAN_EDIT'   => $user['permissions']['CAN_EDIT']   ?? false,
-                'CAN_VIEW'   => $user['permissions']['CAN_VIEW']   ?? false,
-                'CAN_DELETE' => $user['permissions']['CAN_DELETE'] ?? false,
-                'CAN_INVITE' => $user['permissions']['CAN_INVITE'] ?? false,
-            ];
-        }
+        $user = User::findOrFail($request->user_id);
 
-        // Sync users with permissions into pivot table
-        $task->assignedUsers()->syncWithoutDetaching($syncData);
+        $globalPermissions = $request->input('permissions.global', []);
+
+        // ✅ Save Specific Permissions (into pivot table)
+        $specificPermissions = collect($request->input('permissions.specific', []))
+            ->keyBy('task_id')
+            ->map(fn ($perm) => [
+                'CAN_EDIT'   => $perm['permissions']['can_edit']   ?? false,
+                'CAN_VIEW'   => $perm['permissions']['can_view']   ?? false,
+                'CAN_DELETE' => $perm['permissions']['can_delete'] ?? false,
+                'CAN_INVITE' => $perm['permissions']['can_invite'] ?? false,
+            ])
+            ->toArray();
+
+        // Attach specific task-level permissions
+        $task->assignedUsers()->syncWithoutDetaching([
+            $user->id => $specificPermissions[$task->id] ?? []
+        ]);
 
         return response()->json([
-            'message' => 'Users invited successfully!',
-            'task' => $task->load('assignedUsers'),
+            'success'  => true,
+            'message' => 'User invited successfully!',
+            'task'    => $task->load('assignedUsers'),
+            'sync_data' => [
+                'global'   => $globalPermissions,
+                'specific' => $specificPermissions,
+            ]
         ]);
     }
 

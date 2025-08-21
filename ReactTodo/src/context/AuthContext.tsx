@@ -1,6 +1,24 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import type { ReactNode } from "react";
 
+
+interface TaskSpecificPermission {
+    task_id: number;
+    task_title: string;
+    permissions: {
+        can_view: boolean;
+        can_edit: boolean;
+        can_delete: boolean;
+        can_invite: boolean;
+    };
+}
+
+interface UserPermissions {
+    global: string[];
+    specific: TaskSpecificPermission[];
+}
+
+
 interface User {
     id: number,
     name: string,
@@ -9,7 +27,7 @@ interface User {
     phone: number,
     created_at: string,
     updated_at: string,
-    permissions: string[],
+    permissions: UserPermissions,
     role: string,
     type: string,
     image?: string,
@@ -21,7 +39,7 @@ interface User {
 }
 
 interface AuthState {
-    user: User | null,
+    user: User | null | undefined,
     isLoading: boolean,
     error: string | null,
     tokenExpiry: number | null
@@ -73,13 +91,16 @@ interface AuthContextType extends AuthState {
     authenticatedRequest: <T = any>(endpoint: string, options?: RequestInit) => Promise<ApiResponse<T>>;
     dispatch: React.Dispatch<AuthAction>;
     hasRole: (roleName: string) => boolean;
-    hasPermission: (PermissionName: string) => boolean;
+    hasGlobalPermission: (PermissionName: string) => boolean;
+    hasSpecificPermission: (taskId: number, PermissionName: keyof TaskSpecificPermission["permissions"], user?: User | undefined | null) => boolean;
 }
 
 interface OTPReesponse {
     success: boolean,
     message: string,
 }
+
+
 
 // Auth Context
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -479,9 +500,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return state.user?.role === roleName;
     }
 
-    const hasPermission = (permissionName: string): boolean => {
-        return state.user?.permissions?.includes(permissionName) || false;
+    const hasGlobalPermission = (permissionName: string): boolean => {
+        return state.user?.permissions?.global?.includes(permissionName) || false;
     }
+
+    const hasSpecificPermission = (taskId: number, permissionName: keyof TaskSpecificPermission["permissions"], user?: User | null | undefined): boolean => {
+        const User = user ?? state.user;
+        const task = User?.permissions?.specific?.find(t => t.task_id === taskId);
+        console.log("Checking specific permission for taskId:", taskId, "and permissionName:", permissionName, "user array:", User);
+        console.log("Task found:", task);
+        return task?.permissions[permissionName] || false;
+    }
+
 
 
     const value: AuthContextType = {
@@ -493,7 +523,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         authenticatedRequest,
         dispatch,
         hasRole,
-        hasPermission
+        hasGlobalPermission,
+        hasSpecificPermission,
     };
 
     return (

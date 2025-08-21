@@ -22,7 +22,21 @@ class UserResource extends JsonResource
             'number' => $this->number,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'permissions' => $this->getAllPermissions()->pluck('name'),
+            'permissions' => [
+               'global' =>  $this->getAllPermissions()->pluck('name'),
+               'specific' => $this->assignedTasks->map( function ($task) {
+                    return [
+                        'task_id'       => $task->id,
+                        'task_title'    => $task->title,
+                        'permissions'   => [
+                            'can_view'      =>  (bool) $task->pivot->CAN_VIEW,
+                            'can_edit'      =>  (bool) $task->pivot->CAN_EDIT,
+                            'can_delete'    =>  (bool) $task->pivot->CAN_DELETE,
+                            'can_invite'    =>  (bool) $task->pivot->CAN_INVITE,
+                        ],   
+                    ];
+                } )
+            ], 
             'role' => $this->getRoleNames()->first(),
             'status' => $this->status,
             'address' => $this->address,
